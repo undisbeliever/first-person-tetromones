@@ -1,7 +1,7 @@
 
 META = 
 MAPS = 
-TILES = 
+TILES = game-objects.4bpp
 MODE7 = game-field
 
 MODE7TILES = $(patsubst %,%.pc7,$(MODE7))

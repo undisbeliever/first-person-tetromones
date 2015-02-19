@@ -6,6 +6,8 @@
 ;; Resources
 IMPORT_BINARY gameFieldTiles
 IMPORT_BINARY gameFieldPalette
+IMPORT_BINARY gameObjectsTiles
+IMPORT_BINARY gameObjectsPalette
 
 .endif ; ::_RESOURCES_H_
 

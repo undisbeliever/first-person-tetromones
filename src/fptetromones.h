@@ -18,7 +18,11 @@
 NTSC_FPS = 60
 PAL_FPS = 50
 
-N_PIECES = 7
+STARTING_XPOS = 4
+
+N_PIECES  = 7
+N_ROWS	  = 10
+N_LINES   = 20
 DEFAULT_HI_SCORE = 10000
 
 
@@ -28,6 +32,16 @@ IMPORT_MODULE FPTetromones
 	UINT32	score
 	UINT32	hiScore
 	UINT16	statistics, N_PIECES
+
+	;; Number of cells filled per line
+	BYTE	cellsPerLine, N_LINES
+
+	ADDR	nextPiece
+	ADDR	currentPiece
+
+	BYTE	xPos
+	BYTE	yPos
+
 
 	;; Initializes the game, initial hi-score
 	;;

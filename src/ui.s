@@ -1,19 +1,32 @@
 
-
+.include "includes/registers.inc"
 .include "routines/screen.h"
 .include "routines/block.h"
+.include "routines/reset-snes.h"
 .include "routines/math.h"
 
 .include "ui.h"
+.include "pieces.h"
 .include "fptetromones.h"
 
 MODULE Ui
 
 .segment "SHADOW"
+	STRUCT 	oamBuffer, OamFormat, 4
+	BYTE	updateOamBufferOnZero
+
+	UINT16	mode7Hofs
+	UINT16	mode7Vofs
+
 	BYTE	screenBuffer, SCREEN_TILE_WIDTH * SCREEN_TILE_HEIGHT
 	BYTE	updateBufferOnZero
 
 	WORD	drawNumberPos
+	BYTE	drawPieceRow
+	BYTE	drawPieceColumn
+	WORD	drawPieceTemp
+
+	SAME_VARIABLE	drawPieceTile, drawNumberPos
 
 .code
 
@@ -26,6 +39,11 @@ ROUTINE Init
 
 	JSR	SetupScreen
 
+	LDY	SCREEN_CENTER_X
+	STY	mode7Hofs
+	LDY	SCREEN_CENTER_Y
+	STY	mode7Vofs
+
 	JSR	DrawLevelNumber
 	JSR	DrawStatistics
 	JSR	DrawHiScore
@@ -37,6 +55,23 @@ ROUTINE Init
 .A8
 .I16
 ROUTINE VBlank
+	LDA	mode7Hofs
+	STA	M7HOFS
+	LDA	mode7Hofs + 1
+	STA	M7HOFS
+
+	LDA	mode7Vofs
+	STA	M7VOFS
+	LDA	mode7Vofs + 1
+	STA	M7VOFS
+
+
+	LDA	updateOamBufferOnZero
+	IF_ZERO
+		TransferToOamLocation oamBuffer, 0
+		STA	updateOamBufferOnZero
+	ENDIF
+
 	LDA	updateBufferOnZero
 	IF_ZERO
 		; Insert the screenBuffer into mode7 map
@@ -83,6 +118,200 @@ ROUTINE VBlank
 		; A is non zero
 		STA	updateBufferOnZero
 	ENDIF
+
+	RTS
+
+
+
+.A8
+.I16
+ROUTINE MoveGameField
+	; mode7Hofs = FPTetromones__xPos * 8 + SCREEN_TOP_HOFS
+	; mode7Vofs = FPTetromones__yPos * 8 + SCREEN_TOP_VOFS
+
+	REP	#$30
+.A16
+	LDA	FPTetromones__xPos
+	AND	#$00FF
+	ASL
+	ASL
+	ASL
+	ADD	#SCREEN_TOP_HOFS
+	STA	mode7Hofs
+
+	LDA	FPTetromones__yPos
+	AND	#$00FF
+	ASL
+	ASL
+	ASL
+	ADD	#SCREEN_TOP_VOFS
+	STA	mode7Vofs
+
+	SEP	#$20
+.A8
+	RTS
+
+
+
+.A8
+.I16
+ROUTINE CheckPieceDropCollision
+	; nextPiece = FPTetromones__currentPiece
+	; drawPieceTile = nextPiece->tileColor
+	; x = 0
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos + 1) * SCREEN_TILE_WIDTH + DRAW_PIECE_ROW + FPTetromones__xPos
+	;
+	; for drawPieceRow = PIECE_HEIGHT to 0
+	;	for drawPieceColumn = PIECE_WIDTH to 0
+	;		if nextPiece->cells[x] != ' '
+	;			if screenBuffer[y] != 0
+	;				return true
+	;		x++
+	;		y++
+	;
+	;	y += SCREEN_TILE_WIDTH - PIECE_WIDTH
+	;
+	; return false
+
+	LDX	FPTetromones__currentPiece
+
+	LDA	a:Piece::tileColor, X
+	STA	drawPieceTile
+
+	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
+	REP	#$20
+.A16
+	LDA	FPTetromones__yPos
+	AND	#$00FF
+	ADD	#DRAW_PIECE_COLUMN + 1
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL
+	STA	drawPieceTemp
+
+	LDA	FPTetromones__xPos
+	AND	#$00FF
+	ADD	#DRAW_PIECE_ROW
+	ADD	drawPieceTemp
+	TAY
+
+	SEP	#$20
+.A8
+
+	LDA	#PIECE_HEIGHT
+	STA	drawPieceRow
+
+	REPEAT
+		LDA	#PIECE_WIDTH
+		STA	drawPieceColumn
+
+		REPEAT
+			LDA	a:Piece::cells, X
+			CMP	#' '
+			IF_NE
+				LDA	screenBuffer, Y
+				IF_NOT_ZERO
+					SEC
+					RTS
+				ENDIF
+			ENDIF
+
+			INX
+			INY
+
+			DEC	drawPieceColumn
+		UNTIL_ZERO
+
+		REP	#$31	; include carry
+.A16
+		TYA
+		ADC	#SCREEN_TILE_WIDTH - PIECE_WIDTH
+		TAY
+
+		SEP	#$20
+.A8
+		DEC	drawPieceRow
+	UNTIL_ZERO
+
+	CLC
+	RTS
+
+
+
+.A8
+.I16
+ROUTINE DrawCurrentPiece
+	; currentPiece = FPTetromones__currentPiece
+	; drawPieceTile = (currentPiece->tileColor - 1) << OAM_ATTR_PALETTE_SHIFT | (3 << OAM_ATTR_ORDER_SHIFT)
+	; x = 0
+	;
+	; for drawPieceRow = 0 to PIECE_HEIGHT
+	;	for drawPieceColumn = 0 to PIECE_WIDTH
+	;		if currentPiece->cells[x] != ' '
+	;			oamBuffer[y]::xPos = drawPieceColumn * 8 + CURRENT_PIECE_XPOS
+	;			oamBuffer[y]::yPos = drawPieceRow * 8 + CURRENT_PIECE_YPOS
+	;			oamBuffer[y]::char = 0
+	;			oamBuffer[y]::attr = drawPieceTile
+	;
+	;			y++ // actually 4 bytes
+	;		x++
+
+	LDX	FPTetromones__currentPiece
+
+	LDA	a:Piece::tileColor, X
+	DEC
+	ASL
+	ORA	#3 << OAM_ATTR_ORDER_SHIFT
+	STA	drawPieceTile
+
+	LDY	#0
+
+	STZ	drawPieceRow
+	REPEAT
+		STZ	drawPieceColumn
+
+		REPEAT
+			LDA	a:Piece::cells, X
+			CMP	#' '
+			IF_NE
+				LDA	drawPieceColumn
+				ASL
+				ASL
+				ASL
+				ADD	#CURRENT_PIECE_XPOS
+				STA	oamBuffer + OamFormat::xPos, Y
+				LDA	drawPieceRow
+				ASL
+				ASL
+				ASL
+				ADD	#CURRENT_PIECE_YPOS
+				STA	oamBuffer + OamFormat::yPos, Y
+				LDA	#0
+				STA	oamBuffer + OamFormat::char, Y
+				LDA	drawPieceTile
+				STA	oamBuffer + OamFormat::attr, Y
+
+				INY
+				INY
+				INY
+				INY
+			ENDIF
+
+			INX
+
+			INC	drawPieceColumn
+			LDA	drawPieceColumn
+			CMP	#PIECE_WIDTH
+		UNTIL_GE
+
+		INC	drawPieceRow
+		LDA	drawPieceRow
+		CMP	#PIECE_HEIGHT
+	UNTIL_GE
+
+	STZ	updateOamBufferOnZero
 
 	RTS
 
@@ -238,9 +467,20 @@ ROUTINE SetupScreen
 
 	Screen_SetVramBaseAndSize GAME
 
+	; Clear OAM, except for the the first 4 Objects of OAM High Table.
+	JSR	Reset__ClearOAM
+	LDX	#128 * 4 / 2
+	STX	OAMADD
+	STZ	OAMDATA
+
+	TransferToVramLocation		gameObjectsTiles, GAME_OAM_TILES
+	.repeat 5, i
+		TransferToCgramLocation		gameFieldPalette + 2 + 5 * 2 * i, 129 + 16 * i, 5 * 2
+	.endrepeat
+
 	ClearVramLocation		0, MODE7_TILE_WIDTH * MODE7_TILE_HEIGHT * 2
 	TransferToVramLocationDataHigh	gameFieldTiles, 0
-	TransferToCgramLocation		gameFieldPalette, 0
+	TransferToCgramLocation		gameFieldPalette, 0, 256
 
 	; Reset rotation to normal
 	LDA	#1
@@ -263,16 +503,8 @@ ROUTINE SetupScreen
 	LDA	#.hibyte(SCREEN_CENTER_Y)
 	STA	M7Y
 
-	LDA	#.lobyte(SCREEN_HOFS)
-	STA	M7HOFS
-	LDA	#.hibyte(SCREEN_HOFS)
-	STA	M7HOFS
-	LDA	#.lobyte(SCREEN_VOFS)
-	STA	M7VOFS
-	LDA	#.hibyte(SCREEN_VOFS)
-	STA	M7VOFS
 
-	LDA	#TM_BG1
+	LDA	#TM_BG1 | TM_OBJ
 	STA	TM
 
 	RTS

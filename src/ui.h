@@ -14,8 +14,10 @@
 ;; Game Center rotation point
 SCREEN_CENTER_X	= 512
 SCREEN_CENTER_Y	= 512
-SCREEN_HOFS	= SCREEN_CENTER_X - 256 / 2
-SCREEN_VOFS	= SCREEN_CENTER_Y - 224 / 2
+
+;; Top left position of the game field.
+SCREEN_TOP_HOFS = 476 - 256 / 2
+SCREEN_TOP_VOFS = 435 - 224 / 2
 
 MODE7_TILE_WIDTH  = 128
 MODE7_TILE_HEIGHT = 128
@@ -29,6 +31,12 @@ SCREEN_TILE_WIDTH  = 32
 NUMBER_DIGIT_DELTA = 6
 NUMBER_DIGIT_SECOND_HALF_DELTA = 10
 
+CURRENT_PIECE_XPOS = 128 - 32 / 2 + 4
+CURRENT_PIECE_YPOS = 112 - 32 / 2 + 4 
+
+DRAW_PIECE_ROW      = 10
+DRAW_PIECE_COLUMN   = 3
+
 ; Locations of the digits
 DRAW_LEVEL_ROW      = 29
 DRAW_LEVEL_COLUMN   = 23 
@@ -41,6 +49,9 @@ DRAW_STATS_ROW      =  8
 DRAW_STATS_COLUMN   =  4
 DRAW_STATS_SPACING  =  3
 DRAW_N_STATS        =  7
+
+DRAW_NEXT_ROW       = 25
+DRAW_NEXT_COLUMN    = 15
 
 
 ;; VRAM Map
@@ -63,6 +74,19 @@ IMPORT_MODULE Ui
 	;; REQUIRES: 8 bit A, 16 bit Index
 	ROUTINE VBlank
 
+	;; Changes the location of the BG to match the
+	;; game curret piece location
+	;; REQUIRES: 8 bit A, 16 bit Index
+	ROUTINE MoveGameField
+
+	;; Draws the current piece as a set of 4 sprites.
+	;; REQUIRE: 8 bit A, 16 bit Index
+	ROUTINE DrawCurrentPiece
+
+	;; Draws the next piece in the next section
+	;; REQUIRE: 8 bit A, 16 bit Index
+	ROUTINE DrawNextPiece
+	
 	;; Draws the level number to the screen
 	;; REQUIRE: 8 bit A, 16 bit Index
 	;; INPUT:
@@ -79,7 +103,6 @@ IMPORT_MODULE Ui
 
 	;; Draws the Score to the screen
 	ROUTINE DrawScore
-	
 
 ENDMODULE
 
