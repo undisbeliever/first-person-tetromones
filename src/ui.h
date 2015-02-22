@@ -79,6 +79,13 @@ IMPORT_MODULE Ui
 	;; REQUIRES: 8 bit A, 16 bit Index
 	ROUTINE MoveGameField
 
+	;; Checks to see if the current piece will collide
+	;; with the current game map on the next drop.
+	;;
+	;; REQUIRE: 8 bit A, 16 bit Index
+	;; RETURN: c set if current piece is on top of another.
+	ROUTINE CheckPieceDropCollision
+
 	;; Draws the current piece as a set of 4 sprites.
 	;; REQUIRE: 8 bit A, 16 bit Index
 	ROUTINE DrawCurrentPiece
@@ -86,6 +93,10 @@ IMPORT_MODULE Ui
 	;; Draws the next piece in the next section
 	;; REQUIRE: 8 bit A, 16 bit Index
 	ROUTINE DrawNextPiece
+
+	;; Draws the curren piece on the game field
+	;; REQUIRE: 8 bit A, 16 bit Index
+	ROUTINE	DrawCurrentPieceOnField
 	
 	;; Draws the level number to the screen
 	;; REQUIRE: 8 bit A, 16 bit Index

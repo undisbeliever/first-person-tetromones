@@ -319,6 +319,156 @@ ROUTINE DrawCurrentPiece
 
 .A8
 .I16
+ROUTINE DrawCurrentPieceOnField
+	; nextPiece = FPTetromones__currentPiece
+	; drawPieceTile = nextPiece->tileColor
+	; x = 0
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + DRAW_PIECE_ROW + FPTetromones__xPos
+	;
+	; for drawPieceRow = PIECE_HEIGHT to 0
+	;	for drawPieceColumn = PIECE_WIDTH to 0
+	;		if nextPiece->cells[x] != ' '
+	;			screenBuffer[y] = drawPieceTile
+	;		x++
+	;		y++
+	;
+	;	y += SCREEN_TILE_WIDTH - PIECE_WIDTH
+	; until y >= (DRAW_NEXT_COLUMN + PIECE_HEIGHT) * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+	;
+	; updateOamBufferOnZero = 0
+
+	LDX	FPTetromones__currentPiece
+
+	LDA	a:Piece::tileColor, X
+	STA	drawPieceTile
+
+	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
+	REP	#$20
+.A16
+	LDA	FPTetromones__yPos
+	AND	#$00FF
+	ADD	#DRAW_PIECE_COLUMN
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL
+	STA	drawPieceTemp
+
+	LDA	FPTetromones__xPos
+	AND	#$00FF
+	ADD	#DRAW_PIECE_ROW
+	ADD	drawPieceTemp
+	TAY
+
+	SEP	#$20
+.A8
+
+	LDA	#PIECE_HEIGHT
+	STA	drawPieceRow
+
+	REPEAT
+		LDA	#PIECE_WIDTH
+		STA	drawPieceColumn
+
+		REPEAT
+			LDA	a:Piece::cells, X
+			CMP	#' '
+			IF_NE
+				LDA	drawPieceTile
+				STA	screenBuffer, Y
+			ENDIF
+
+			INX
+			INY
+
+			DEC	drawPieceColumn
+		UNTIL_ZERO
+
+		REP	#$31	; include carry
+.A16
+		TYA
+		ADC	#SCREEN_TILE_WIDTH - PIECE_WIDTH
+		TAY
+
+		SEP	#$20
+.A8
+		DEC	drawPieceRow
+	UNTIL_ZERO
+
+	STZ	updateBufferOnZero
+	RTS
+
+
+.A8
+.I16
+ROUTINE DrawNextPiece
+	; nextPiece = FPTetromones__nextPiece
+	; drawPieceTile = nextPiece->tileColor
+	; x = 0
+	; y = DRAW_NEXT_COLUMN * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+	;
+	; repeat
+	;	for drawPieceColumn = PIECE_WIDTH to 0
+	;		if nextPiece->cells[x] == ' '
+	;			screenBuffer[y] = 0
+	;		else
+	;			screenBuffer[y] = drawPieceTile
+	;		x++
+	;		y++
+	;
+	;	y += SCREEN_TILE_WIDTH - PIECE_WIDTH
+	; until y >= (DRAW_NEXT_COLUMN + PIECE_HEIGHT) * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+	;
+	; updateOamBufferOnZero = 0
+
+	LDX	FPTetromones__nextPiece
+
+	LDA	a:Piece::tileColor, X
+	STA	drawPieceTile
+
+	LDY	#DRAW_NEXT_COLUMN * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+
+	REPEAT
+		LDA	#PIECE_WIDTH
+		STA	drawPieceColumn
+
+		REPEAT
+			LDA	a:Piece::cells, X
+			CMP	#' '
+			IF_EQ
+				LDA	#0
+			ELSE
+				LDA	drawPieceTile
+			ENDIF
+
+			STA	screenBuffer, Y
+
+			INX
+			INY
+
+			DEC	drawPieceColumn
+		UNTIL_ZERO
+
+		REP	#$31	; include carry
+.A16
+		TYA
+		ADC	#SCREEN_TILE_WIDTH - PIECE_WIDTH
+		TAY
+
+		SEP	#$20
+.A8
+		CPY	#(DRAW_NEXT_COLUMN + PIECE_HEIGHT) * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+	UNTIL_GE
+
+	STZ	updateBufferOnZero
+
+	RTS
+
+
+
+.A8
+.I16
 ROUTINE DrawLevelNumber
 	; y = score
 	; tmp = DRAW_LEVEL_COLUMN * SCREEN_TILE_WIDTH + DRAW_LEVEL_ROW

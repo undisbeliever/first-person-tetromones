@@ -9,6 +9,9 @@
 
 MODULE FPTetromones
 
+;; ::DEBUG replace with table::
+LEVEL_1_DROP_DELAY = 50
+
 .segment "SHADOW"
 	UINT32  hiScore
 
@@ -26,6 +29,8 @@ GameVariables:
 
 	BYTE	xPos
 	BYTE	yPos
+
+	BYTE	dropDelay
 
 GameVariables_End:
 
@@ -60,12 +65,61 @@ ROUTINE	PlayGame
 
 	JSR	Screen__FadeIn
 
-	REPEAT
-		INC16	score
+	.assert * = GameLoop, lderror, "Bad Flow"
 
-		JSR	Ui__DrawScore
-		WAI
+
+
+;; Processes the game loop
+.A8
+.I16
+ROUTINE GameLoop
+	; repeat:
+	;	if --dropDelay == 0
+	;		c = Ui__CheckPieceDropCollision()
+	;		if c set
+	;			PlacePiece()
+	;		else
+	;			yPos += 1
+	;			dropDelay = LEVEL_1_DROP_DELAY
+	;			Ui__MoveGameField()
+	;	Screen__WaitFrame()
+	REPEAT
+		DEC	dropDelay
+		IF_ZERO
+			JSR	Ui__CheckPieceDropCollision
+			IF_C_SET
+				JSR	PlacePiece
+			ELSE
+				INC	yPos
+				LDA	#LEVEL_1_DROP_DELAY
+				STA	dropDelay
+
+				JSR	Ui__MoveGameField
+			ENDIF
+		ENDIF
+
+		JSR	Screen__WaitFrame
 	FOREVER
+
+
+
+;; Places the current piece on the game field
+.A8
+.I16
+ROUTINE PlacePiece
+	JSR	Ui__DrawCurrentPieceOnField
+
+	;; ::TODO increment score::
+
+	;; ::TODO add to line counter::
+	;; ::TODO check line counter::
+
+	JSR	DetermineNextPiece
+
+	;; ::SHOULDDO slowly move screen::
+	JSR	Ui__MoveGameField
+
+	RTS
 
 
 .A8
@@ -77,6 +131,11 @@ ROUTINE DetermineNextPiece
 	LDA	#STARTING_XPOS
 	STA	xPos
 	STZ	yPos
+
+	LDA	#LEVEL_1_DROP_DELAY
+	STA	dropDelay
+
+	;; ::TODO game over check::
 
 	JSR	Ui__DrawCurrentPiece
 
