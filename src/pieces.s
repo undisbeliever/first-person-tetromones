@@ -37,6 +37,8 @@ SquareLeft:
 	.byte	0
 	.byte	2
 
+	.byte	0, 2, 2, 0
+
 	.byte	"    "
 	.byte	"**  "
 	.byte	"**  "
@@ -51,6 +53,8 @@ SquareRight:
 
 	.byte	1
 	.byte	3
+
+	.byte	0, 2, 2, 0
 
 	.byte	"    "
 	.byte	" ** "
@@ -68,6 +72,8 @@ TBlock_0:
 	.byte	0
 	.byte	3
 
+	.byte	1, 3, 0, 0
+
 	.byte	" *  "
 	.byte	"*** "
 	.byte	"    "
@@ -82,6 +88,8 @@ TBlock_1:
 
 	.byte	0
 	.byte	2
+
+	.byte	1, 2, 1, 0
 
 	.byte	" *  "
 	.byte	"**  "
@@ -98,6 +106,8 @@ TBlock_2:
 	.byte	0
 	.byte	3
 
+	.byte	0, 3, 1, 0
+
 	.byte	"    "
 	.byte	"*** "
 	.byte	" *  "
@@ -112,6 +122,8 @@ TBlock_3:
 
 	.byte	1
 	.byte	3
+
+	.byte	1, 2, 1, 0
 
 	.byte	" *  "
 	.byte	" ** "

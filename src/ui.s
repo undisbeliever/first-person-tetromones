@@ -308,6 +308,102 @@ ROUTINE _CheckPieceCollision
 
 
 
+; INPUT: A = line number to remove
+.A8
+.I16
+ROUTINE HighlightLine
+	; x = (DRAW_PIECE_COLUMN + line) * SCREEN_TILE_WIDTH
+	; for y = 0 to N_ROWS
+	;	screenBuffer[x + PLAYFIELD_ROW] = HIGHLIGHTED_TILE
+
+	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
+	REP	#$20
+.A16
+	AND	#$00FF
+	ADD	#DRAW_PIECE_COLUMN
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL
+	TAX
+
+	LDA	#HIGHLIGHTED_TILE | (HIGHLIGHTED_TILE <<8)
+	.repeat	N_ROWS / 2, i
+		STA	screenBuffer + i * 2 + PLAYFIELD_ROW, X
+	.endrepeat
+
+	SEP	#$20
+.A8
+
+	STZ	updateBufferOnZero
+
+	RTS
+
+
+
+; INPUT: A = line number to remove
+.A8
+.I16
+ROUTINE RemoveLine
+	; x = (DRAW_PIECE_COLUMN + line) * SCREEN_TILE_WIDTH
+	; repeat
+	;	memcpy(screenBuffer[x - SCREEN_TILE_WIDTH + PLAYFIELD_ROW], screenBuffer[x + PLAYFIELD_ROW], N_ROWS)
+	;	x -= SCREEN_TILE_WIDTH
+	; UNTIL x < (DRAW_PIECE_COLUMN + 1) * SCREEN_TILE_WIDTH
+
+	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
+	REP	#$20
+.A16
+	AND	#$00FF
+	ADD	#DRAW_PIECE_COLUMN
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL
+
+	REPEAT
+		TAX
+
+		.repeat	N_ROWS / 2, i
+			LDA	screenBuffer - SCREEN_TILE_WIDTH + i * 2 + PLAYFIELD_ROW, X
+			STA	screenBuffer + i * 2 + PLAYFIELD_ROW, X
+		.endrepeat
+
+		TXA
+		SUB	#SCREEN_TILE_WIDTH
+		CMP	#(DRAW_PIECE_COLUMN + 1) * SCREEN_TILE_WIDTH
+	UNTIL_LT
+
+	SEP	#$20
+.A8
+
+	STZ	updateBufferOnZero
+
+	RTS
+
+
+
+.A8
+.I16
+ROUTINE HideCurrentPiece
+	; for i = 0 to 4
+	;	oamBuffer[i]::yPos = -16
+	;
+	; updateOamBufferOnZero = 0
+
+	LDA	#.lobyte(-16)
+	.repeat 4, i
+		STA	oamBuffer + OamFormat::yPos + i * 4
+	.endrepeat
+
+	STZ	updateOamBufferOnZero
+
+	RTS
+
+
+
 .A8
 .I16
 ROUTINE DrawCurrentPiece
@@ -325,6 +421,8 @@ ROUTINE DrawCurrentPiece
 	;
 	;			y++ // actually 4 bytes
 	;		x++
+	;
+	; updateOamBufferOnZero = 0
 
 	LDX	FPTetromones__currentPiece
 

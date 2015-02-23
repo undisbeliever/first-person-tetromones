@@ -33,6 +33,9 @@ PIECE_HEIGHT = 4
 	;; Rightmost tile postion
 	right		.byte
 
+	;; A table of the number of cells per line.
+	cellsPerLine	.res 4
+
 	;; The location of the cells. space is clear, anything else has a tile.
 	cells		.res 4 * 4
 .endstruct

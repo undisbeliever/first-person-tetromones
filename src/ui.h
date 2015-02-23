@@ -16,7 +16,11 @@ SCREEN_CENTER_X	= 512
 SCREEN_CENTER_Y	= 512
 
 ;; The start of the screen column.
-DRAW_PIECE_COLUMN   = 3
+DRAW_PIECE_COLUMN  = 3
+PLAYFIELD_ROW	   = 11
+
+;; The tile that signifies a row for removal.
+HIGHLIGHTED_TILE   = 5
 
 ;; Top left position of the game field.
 SCREEN_TOP_HOFS = 396 - 256 / 2
@@ -99,6 +103,22 @@ IMPORT_MODULE Ui
 	;; REQUIRE: 8 bit A, 16 bit Index
 	;; RETURN: c set if current piece is on top of another.
 	ROUTINE CheckPieceDropCollision
+
+	;; Hghlights all of the tiles of a single line.
+	;; Used for completed line animation.
+	;; REQUIRES: 8 bit A, 16 bit Index
+	;; INPUT: A = line
+	ROUTINE HighlightLine
+
+	;; Removes a single line from play by dropping all the previous
+	;; lines on top of it.
+	;; REQUIRES: 8 bit A, 16 bit Index
+	;; INPUT: A = line
+	ROUTINE RemoveLine
+
+	;; Hides the current piece from the screen.
+	;; REQUIRE: 8 bit A, 16 bit Index
+	ROUTINE HideCurrentPiece
 
 	;; Draws the current piece as a set of 4 sprites.
 	;; REQUIRE: 8 bit A, 16 bit Index

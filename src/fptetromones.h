@@ -20,6 +20,9 @@ PAL_FPS = 50
 
 STARTING_XPOS = 14
 
+;; Number of frames to wait when dropping a line
+LINE_REMOVE_DELAY = 12
+
 N_PIECES  = 7
 N_ROWS	  = 10
 N_LINES   = 20
@@ -33,9 +36,6 @@ IMPORT_MODULE FPTetromones
 	UINT32	score
 	UINT32	hiScore
 	UINT16	statistics, N_PIECES
-
-	;; Number of cells filled per line
-	BYTE	cellsPerLine, N_LINES
 
 	ADDR	nextPiece
 	ADDR	currentPiece
