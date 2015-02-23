@@ -8,7 +8,6 @@
 .include "includes/synthetic.inc"
 .include "includes/registers.inc"
 .include "includes/structure.inc"
-.include "routines/metasprite.h"
 
 .include "resources.h"
 

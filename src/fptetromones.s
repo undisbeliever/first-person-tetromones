@@ -4,8 +4,10 @@
 .include "routines/screen.h"
 
 .include "fptetromones.h"
+.include "controls.h"
 .include "pieces.h"
 .include "ui.h"
+
 
 MODULE FPTetromones
 
@@ -74,7 +76,15 @@ ROUTINE	PlayGame
 .I16
 ROUTINE GameLoop
 	; repeat:
-	;	if --dropDelay == 0
+	;	Screen__WaitFrame()
+	;	Controls__Update()
+	;
+	;	if Controls__held & JOYH_DOWN
+	;		dropDelay -= FAST_DROP_SPEED
+	;	else
+	;		dropDelay--;
+	;
+	;	if dropDelay < 0
 	;		c = Ui__CheckPieceDropCollision()
 	;		if c set
 	;			PlacePiece()
@@ -82,10 +92,32 @@ ROUTINE GameLoop
 	;			yPos += 1
 	;			dropDelay = LEVEL_1_DROP_DELAY
 	;			Ui__MoveGameField()
-	;	Screen__WaitFrame()
+	;
+	;	if Controls__pressed & JOYH_LEFT
+	;		if Ui__CheckPieceLeftCollision() != true
+	;			xPos--;
+	;			Ui__MoveGameField()
+	;			PlaySound(SOUND_MOVE_LEFT)
+	;	else if Controls__pressed & JOYH_RIGHT
+	;		if Ui__CheckPieceRightCollision() != true
+	;			xPos++;
+	;			Ui__MoveGameField()
+	;			PlaySound(SOUND_MOVE_RIGHT)
+	;
 	REPEAT
-		DEC	dropDelay
-		IF_ZERO
+		JSR	Screen__WaitFrame
+		JSR	Controls__Update
+
+		LDA	Controls__held + 1
+		IF_BIT	#JOYH_DOWN
+			LDA	dropDelay
+			SUB	#FAST_DROP_SPEED
+			STA	dropDelay
+		ELSE
+			DEC	dropDelay
+		ENDIF
+
+		IF_MINUS
 			JSR	Ui__CheckPieceDropCollision
 			IF_C_SET
 				JSR	PlacePiece
@@ -98,7 +130,22 @@ ROUTINE GameLoop
 			ENDIF
 		ENDIF
 
-		JSR	Screen__WaitFrame
+		LDA	Controls__pressed + 1
+		IF_BIT	#JOYH_LEFT
+			JSR	Ui__CheckPieceLeftCollision
+			IF_C_CLEAR
+				DEC	xPos
+				JSR	Ui__MoveGameField
+				; ::SOUND move left::
+			ENDIF
+		ELSE_BIT	#JOYH_RIGHT
+			JSR	Ui__CheckPieceRightCollision
+			IF_C_CLEAR
+				INC	xPos
+				JSR	Ui__MoveGameField
+				; ::SOUND move right::
+			ENDIF
+		ENDIF
 	FOREVER
 
 
@@ -113,6 +160,7 @@ ROUTINE PlacePiece
 
 	;; ::TODO add to line counter::
 	;; ::TODO check line counter::
+	;; ::SOUND SOUND_DROP::
 
 	JSR	DetermineNextPiece
 

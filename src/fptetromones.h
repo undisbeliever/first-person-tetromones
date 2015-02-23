@@ -18,13 +18,14 @@
 NTSC_FPS = 60
 PAL_FPS = 50
 
-STARTING_XPOS = 4
+STARTING_XPOS = 14
 
 N_PIECES  = 7
 N_ROWS	  = 10
 N_LINES   = 20
 DEFAULT_HI_SCORE = 10000
 
+FAST_DROP_SPEED = 20
 
 IMPORT_MODULE FPTetromones
 
@@ -39,7 +40,9 @@ IMPORT_MODULE FPTetromones
 	ADDR	nextPiece
 	ADDR	currentPiece
 
+	;; X Position of current piece relative to screenBuffer left in tiles
 	BYTE	xPos
+	;; Y Position of current piece relative to top of theplayable area in tiles.
 	BYTE	yPos
 
 

@@ -15,8 +15,11 @@
 SCREEN_CENTER_X	= 512
 SCREEN_CENTER_Y	= 512
 
+;; The start of the screen column.
+DRAW_PIECE_COLUMN   = 3
+
 ;; Top left position of the game field.
-SCREEN_TOP_HOFS = 476 - 256 / 2
+SCREEN_TOP_HOFS = 396 - 256 / 2
 SCREEN_TOP_VOFS = 435 - 224 / 2
 
 MODE7_TILE_WIDTH  = 128
@@ -33,9 +36,6 @@ NUMBER_DIGIT_SECOND_HALF_DELTA = 10
 
 CURRENT_PIECE_XPOS = 128 - 32 / 2 + 4
 CURRENT_PIECE_YPOS = 112 - 32 / 2 + 4 
-
-DRAW_PIECE_ROW      = 10
-DRAW_PIECE_COLUMN   = 3
 
 ; Locations of the digits
 DRAW_LEVEL_ROW      = 29
@@ -78,6 +78,20 @@ IMPORT_MODULE Ui
 	;; game curret piece location
 	;; REQUIRES: 8 bit A, 16 bit Index
 	ROUTINE MoveGameField
+
+	;; Checks to see if the current piece will collide
+	;; with the current game map if the piece moves to the left.
+	;;
+	;; REQUIRE: 8 bit A, 16 bit Index
+	;; RETURN: c set if current piece cannot move to the left
+	ROUTINE CheckPieceLeftCollision
+
+	;; Checks to see if the current piece will collide
+	;; with the current game map if the piece moves to the right.
+	;;
+	;; REQUIRE: 8 bit A, 16 bit Index
+	;; RETURN: c set if current piece cannot move to the right
+	ROUTINE CheckPieceRightCollision
 
 	;; Checks to see if the current piece will collide
 	;; with the current game map on the next drop.

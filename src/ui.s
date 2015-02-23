@@ -155,28 +155,72 @@ ROUTINE MoveGameField
 
 .A8
 .I16
+ROUTINE CheckPieceLeftCollision
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos - 1
+	; _CheckPieceCollision(y);
+
+	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
+	REP	#$20
+.A16
+	LDA	FPTetromones__yPos
+	AND	#$00FF
+	ADD	#DRAW_PIECE_COLUMN
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL
+	STA	drawPieceTemp
+
+	LDA	FPTetromones__xPos
+	AND	#$00FF
+	ADD	drawPieceTemp
+	DEC
+	TAY
+
+	SEP	#$20
+.A8
+	BRA	_CheckPieceCollision
+
+
+
+
+.A8
+.I16
+ROUTINE CheckPieceRightCollision
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos + 1
+	; _CheckPieceCollision(y);
+
+	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
+	REP	#$20
+.A16
+	LDA	FPTetromones__yPos
+	AND	#$00FF
+	ADD	#DRAW_PIECE_COLUMN
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL
+	STA	drawPieceTemp
+
+	LDA	FPTetromones__xPos
+	AND	#$00FF
+	SEC			; + 1
+	ADC	drawPieceTemp
+	TAY
+
+	SEP	#$20
+.A8
+	BRA	_CheckPieceCollision
+
+
+
+
+.A8
+.I16
 ROUTINE CheckPieceDropCollision
-	; nextPiece = FPTetromones__currentPiece
-	; drawPieceTile = nextPiece->tileColor
-	; x = 0
-	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos + 1) * SCREEN_TILE_WIDTH + DRAW_PIECE_ROW + FPTetromones__xPos
-	;
-	; for drawPieceRow = PIECE_HEIGHT to 0
-	;	for drawPieceColumn = PIECE_WIDTH to 0
-	;		if nextPiece->cells[x] != ' '
-	;			if screenBuffer[y] != 0
-	;				return true
-	;		x++
-	;		y++
-	;
-	;	y += SCREEN_TILE_WIDTH - PIECE_WIDTH
-	;
-	; return false
-
-	LDX	FPTetromones__currentPiece
-
-	LDA	a:Piece::tileColor, X
-	STA	drawPieceTile
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos + 1) * SCREEN_TILE_WIDTH + FPTetromones__xPos
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
 	REP	#$20
@@ -193,12 +237,36 @@ ROUTINE CheckPieceDropCollision
 
 	LDA	FPTetromones__xPos
 	AND	#$00FF
-	ADD	#DRAW_PIECE_ROW
 	ADD	drawPieceTemp
 	TAY
 
 	SEP	#$20
 .A8
+
+	.assert * = _CheckPieceCollision, lderror, "Bad Flow"
+
+
+;; Checks collision against a given tilemap location
+;; INPUT: y = tilemap index
+.A8
+.I16
+ROUTINE _CheckPieceCollision
+	; nextPiece = FPTetromones__currentPiece
+	; x = 0
+	;
+	; for drawPieceRow = PIECE_HEIGHT to 0
+	;	for drawPieceColumn = PIECE_WIDTH to 0
+	;		if nextPiece->cells[x] != ' '
+	;			if screenBuffer[y] != 0
+	;				return true
+	;		x++
+	;		y++
+	;
+	;	y += SCREEN_TILE_WIDTH - PIECE_WIDTH
+	;
+	; return false
+
+	LDX	FPTetromones__currentPiece
 
 	LDA	#PIECE_HEIGHT
 	STA	drawPieceRow
@@ -323,7 +391,7 @@ ROUTINE DrawCurrentPieceOnField
 	; nextPiece = FPTetromones__currentPiece
 	; drawPieceTile = nextPiece->tileColor
 	; x = 0
-	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + DRAW_PIECE_ROW + FPTetromones__xPos
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos
 	;
 	; for drawPieceRow = PIECE_HEIGHT to 0
 	;	for drawPieceColumn = PIECE_WIDTH to 0
@@ -357,7 +425,6 @@ ROUTINE DrawCurrentPieceOnField
 
 	LDA	FPTetromones__xPos
 	AND	#$00FF
-	ADD	#DRAW_PIECE_ROW
 	ADD	drawPieceTemp
 	TAY
 
