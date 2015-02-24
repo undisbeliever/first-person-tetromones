@@ -1,6 +1,6 @@
 
 BINARY      = bin/First_Person_Tetromones.sfc
-API_MODULES = reset-snes block screen math
+API_MODULES = reset-snes block screen math random
 API_DIR     = snesdev-common
 CONFIG      = LOROM_1MBit
 

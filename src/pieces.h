@@ -23,15 +23,10 @@ PIECE_HEIGHT = 4
 
 	;; Index of the piece in the statistics table.
 	;; Piece number * 2.
-	statsNumber	.word
+	statsIndex	.word
 
 	;; The color of the tiles (1 - 4)
 	tileColor	.byte
-
-	;; Leftmost tile position 
-	left		.byte
-	;; Rightmost tile postion
-	right		.byte
 
 	;; A table of the number of cells per line.
 	cellsPerLine	.res 4

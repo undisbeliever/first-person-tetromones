@@ -2,6 +2,7 @@
 
 .include "routines/block.h"
 .include "routines/screen.h"
+.include "routines/random.h"
 
 .include "fptetromones.h"
 .include "controls.h"
@@ -58,17 +59,27 @@ ROUTINE	PlayGame
 	LDA	#1
 	STA	level
 
-	;; ::DEBUG::
-	LDX	Pieces__Table + 1*2
-	STX	nextPiece
-
 	JSR	Ui__Init
-	JSR	Ui__DrawNextPiece
-	JSR	Ui__DrawCurrentPiece
+
 	JSR	DetermineNextPiece
-	JSR	Ui__MoveGameField
+	JSR	DetermineNextPiece
 
 	JSR	Screen__FadeIn
+
+	LDY	JOY1
+	CPY	#JOY_SELECT
+	IF_EQ
+		REPEAT
+			;; ::DEBUG - Test Random Number generator::
+			JSR	DetermineNextPiece
+
+			LDA	#10
+			STA	yPos
+			JSR	Ui__MoveGameField
+
+			JSR	WaitFrame
+		FOREVER
+	ENDIF
 
 	.assert * = GameLoop, lderror, "Bad Flow"
 
@@ -155,22 +166,37 @@ ROUTINE GameLoop
 .A8
 .I16
 ROUTINE PlacePiece
-	JSR	Ui__DrawCurrentPieceOnField
+	; Ui__DrawCurrentPieceOnField()
+	; nCompletedLines = AddToLineCounter()
+	;
+	; if nCompletedLines != 0
+	;	// ::TODO increment score::
+	;	playSound(COMPLETED_LINE_SOUND)
+	;	RemoveCompletedLinesAnimation()
+	; else
+	;	// ::TODO increment score::
+	;	playSound(DROP_PIECE_SOUND)
+	;
+	; DetermineNextPiece()
+	; Ui__MoveGameField()
 
-	;; ::TODO increment score::
+	JSR	Ui__DrawCurrentPieceOnField
 
 	JSR	AddToLineCounter
 
 	LDA	nCompletedLines
 	IF_NOT_ZERO
 		;; ::TODO increment score::
-		;; ::SOUND COMPLETED_LINE::
+		;; ::SOUND COMPLETED_LINE_SOUND ::
 
 		JSR	RemoveCompletedLinesAnimation
-	ENDIF	
 
-	;; ::TODO check line counter::
-	;; ::SOUND SOUND_DROP::
+		;; ::TODO increment nLines::
+		;; ::TODO check if nLines > linesToNextLevel::
+	ELSE
+		;; ::TODO increment score::
+		;; ::SOUND DROP_PIECE_SOUND ::
+	ENDIF	
 
 	JSR	DetermineNextPiece
 
@@ -220,11 +246,9 @@ ROUTINE AddToLineCounter
 .A8
 .I16
 ROUTINE RemoveCompletedLinesAnimation
-	JSR	Ui__HideCurrentPiece
-	JSR	HighlightCompletedLines
-
-	;; ::SHOULDDO an actual remove lines animation instead of hide::
-
+	; Ui__HideCurrentPiece()
+	; HighlightCompletedLines()
+	;
 	; // Removes Completed Lines
 	; for x = 0 to .sizeof(cellsPerLine)
 	;	if cellsPerLine[x] >= N_ROWS
@@ -234,6 +258,11 @@ ROUTINE RemoveCompletedLinesAnimation
 	;
 	;		for y = X to 1
 	;			cellsPerLine[y] = cellsPerLine[y - 1]
+
+	JSR	Ui__HideCurrentPiece
+	JSR	HighlightCompletedLines
+
+	;; ::SHOULDDO an actual remove lines animation instead of hide::
 
 	FOR_X	#0, INC, #.sizeof(cellsPerLine)
 		LDA	cellsPerLine, X
@@ -292,21 +321,56 @@ ROUTINE HighlightCompletedLines
 .A8
 .I16
 ROUTINE DetermineNextPiece
-	LDX	nextPiece
-	STX	currentPiece
+	; currentPiece = nextPiece
+	; statistics[currentPiece->statsIndex]++
+	; xPos = STARTING_XPOS
+	; yPos = 0
+	; dropDelay = LEVEL_1_DROP_DELAY
+	; x = Random(0, Pieces__COUNT)
+	; nextPiece = Pieces__Table[x]
+	;
+	; Ui__MoveGameField()
+	; Ui__DrawCurrentPiece()
+	; Ui__DrawStatistics()
+	; Ui__DrawNextPiece()
+
+	LDY	nextPiece
+	STY	currentPiece
+
+	;; ::TODO game over check::
+
+	LDX	a:Piece::statsIndex, Y
+
+	INC16	statistics, X
 
 	LDA	#STARTING_XPOS
 	STA	xPos
 	STZ	yPos
 
+	;; ::TODO drop delay determined by level::
+
 	LDA	#LEVEL_1_DROP_DELAY
 	STA	dropDelay
 
-	;; ::TODO game over check::
+	LDY	#Pieces__COUNT
+	JSR	Random__Rnd_U16Y
 
+	; Select Next Piece
+	REP	#$20
+.A16
+	TYA
+	ASL
+	TAX
+
+	LDA	Pieces__Table, X
+	STA	nextPiece
+
+	SEP	#$20
+.A8
+
+	JSR	Ui__MoveGameField
 	JSR	Ui__DrawCurrentPiece
-
-	; ::TODO select random next piece::
+	JSR	Ui__DrawStatistics
 	JMP	Ui__DrawNextPiece
 
 
@@ -317,7 +381,8 @@ ROUTINE DetermineNextPiece
 .I16
 ROUTINE WaitFrame
 	JSR	Screen__WaitFrame
-	JMP	Controls__Update
+	JSR	Controls__Update
+	JMP	Random__AddJoypadEntropy
 
 
 

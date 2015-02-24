@@ -35,8 +35,6 @@ MODULE Ui
 ROUTINE Init
 	MemCopy UiInitialBuffer, screenBuffer
 
-	STZ	updateBufferOnZero
-
 	JSR	SetupScreen
 
 	LDY	SCREEN_CENTER_X
@@ -48,6 +46,8 @@ ROUTINE Init
 	JSR	DrawStatistics
 	JSR	DrawHiScore
 	JSR	DrawScore
+
+	STZ	updateBufferOnZero
 
 	.assert * = VBlank, lderror, "Bad flow"
 
