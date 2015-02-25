@@ -84,6 +84,13 @@ IMPORT_MODULE Ui
 	ROUTINE MoveGameField
 
 	;; Checks to see if the current piece will collide
+	;; with the current game map in its current position.
+	;;
+	;; REQUIRE: 8 bit A, 16 bit Index
+	;; RETURN: c set if current piece is in the middle of the field.
+	ROUTINE CheckPieceCollision
+
+	;; Checks to see if the current piece will collide
 	;; with the current game map if the piece moves to the left.
 	;;
 	;; REQUIRE: 8 bit A, 16 bit Index

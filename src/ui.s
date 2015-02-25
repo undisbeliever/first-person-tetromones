@@ -155,6 +155,34 @@ ROUTINE MoveGameField
 
 .A8
 .I16
+ROUTINE CheckPieceCollision
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos
+	; _CheckPieceCollision(y);
+
+	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
+	REP	#$20
+.A16
+	LDA	FPTetromones__yPos
+	AND	#$00FF
+	ADD	#DRAW_PIECE_COLUMN
+	ASL
+	ASL
+	ASL
+	ASL
+	ASL
+	STA	drawPieceTemp
+
+	LDA	FPTetromones__xPos
+	AND	#$00FF
+	ADD	drawPieceTemp
+	TAY
+
+	BRA	_CheckPieceCollision
+
+
+
+.A8
+.I16
 ROUTINE CheckPieceLeftCollision
 	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos - 1
 	; _CheckPieceCollision(y);
@@ -178,8 +206,6 @@ ROUTINE CheckPieceLeftCollision
 	DEC
 	TAY
 
-	SEP	#$20
-.A8
 	BRA	_CheckPieceCollision
 
 
@@ -210,8 +236,6 @@ ROUTINE CheckPieceRightCollision
 	ADC	drawPieceTemp
 	TAY
 
-	SEP	#$20
-.A8
 	BRA	_CheckPieceCollision
 
 
@@ -240,15 +264,12 @@ ROUTINE CheckPieceDropCollision
 	ADD	drawPieceTemp
 	TAY
 
-	SEP	#$20
-.A8
-
 	.assert * = _CheckPieceCollision, lderror, "Bad Flow"
+
 
 
 ;; Checks collision against a given tilemap location
 ;; INPUT: y = tilemap index
-.A8
 .I16
 ROUTINE _CheckPieceCollision
 	; nextPiece = FPTetromones__currentPiece
@@ -265,6 +286,9 @@ ROUTINE _CheckPieceCollision
 	;	y += SCREEN_TILE_WIDTH - PIECE_WIDTH
 	;
 	; return false
+
+	SEP	#$20
+.A8
 
 	LDX	FPTetromones__currentPiece
 

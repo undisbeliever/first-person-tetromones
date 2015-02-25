@@ -21,7 +21,5 @@ ROUTINE Main
 
 	REPEAT
 		JSR	FPTetromones__PlayGame
-
-		BRA	*
 	FOREVER
 

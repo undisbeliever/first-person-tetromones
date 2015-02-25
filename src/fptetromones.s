@@ -30,6 +30,10 @@ GameVariables:
 	;; Number of lines formed in this *turn*
 	BYTE	nCompletedLines
 
+	;; If non-zero then the game is still playing
+	;; If zero, then the game is over.
+	BYTE	continuePlaying
+
 	ADDR	nextPiece
 	ADDR	currentPiece
 
@@ -49,6 +53,7 @@ ROUTINE Init
 	LDXY	#DEFAULT_HI_SCORE
 	STXY	hiScore
 
+	RTS
 
 
 .A8
@@ -62,7 +67,7 @@ ROUTINE	PlayGame
 	JSR	Ui__Init
 
 	JSR	DetermineNextPiece
-	JSR	DetermineNextPiece
+	JSR	NewPiece
 
 	JSR	Screen__FadeIn
 
@@ -81,7 +86,9 @@ ROUTINE	PlayGame
 		FOREVER
 	ENDIF
 
-	.assert * = GameLoop, lderror, "Bad Flow"
+	JSR	GameLoop
+
+	JMP	Screen__FadeOut
 
 
 
@@ -89,6 +96,8 @@ ROUTINE	PlayGame
 .A8
 .I16
 ROUTINE GameLoop
+	; continuePlaying = 1
+	;
 	; repeat:
 	;	WaitFrame()
 	;
@@ -116,7 +125,12 @@ ROUTINE GameLoop
 	;			xPos++;
 	;			Ui__MoveGameField()
 	;			PlaySound(SOUND_MOVE_RIGHT)
+	; until continuePlaying == false
 	;
+
+	LDA	#1
+	STA	continuePlaying
+
 	REPEAT
 		JSR	WaitFrame
 
@@ -158,11 +172,18 @@ ROUTINE GameLoop
 				; ::SOUND move right::
 			ENDIF
 		ENDIF
-	FOREVER
+
+		LDA	continuePlaying
+	UNTIL_ZERO
+
+BREAKPOINT
+	RTS
+
 
 
 
 ;; Places the current piece on the game field
+;; If that placement creates a completed line, calls `RemoveCompletedLinesAnimation`
 .A8
 .I16
 ROUTINE PlacePiece
@@ -177,8 +198,7 @@ ROUTINE PlacePiece
 	;	// ::TODO increment score::
 	;	playSound(DROP_PIECE_SOUND)
 	;
-	; DetermineNextPiece()
-	; Ui__MoveGameField()
+	; NewPiece()
 
 	JSR	Ui__DrawCurrentPieceOnField
 
@@ -198,12 +218,8 @@ ROUTINE PlacePiece
 		;; ::SOUND DROP_PIECE_SOUND ::
 	ENDIF	
 
-	JSR	DetermineNextPiece
+	JMP	NewPiece
 
-	;; ::SHOULDDO slowly move screen::
-	JSR	Ui__MoveGameField
-
-	RTS
 
 
 ;; Increments the `cellsPerLine` variables
@@ -242,19 +258,20 @@ ROUTINE AddToLineCounter
 	RTS
 
 
-;; Remove Completed Lines
+;; Remove Completed Lines, slowly
 .A8
 .I16
 ROUTINE RemoveCompletedLinesAnimation
 	; Ui__HideCurrentPiece()
 	; HighlightCompletedLines()
 	;
+	; WaitManyFrames()
+	;
 	; // Removes Completed Lines
 	; for x = 0 to .sizeof(cellsPerLine)
 	;	if cellsPerLine[x] >= N_ROWS
 	;		Ui__RemoveLine(x)
-	;		for i = 0 to LINE_REMOVE_DELAY
-	;			Screen__WaitFrame()
+	;		WaitManyFrames()
 	;
 	;		for y = X to 1
 	;			cellsPerLine[y] = cellsPerLine[y - 1]
@@ -263,6 +280,8 @@ ROUTINE RemoveCompletedLinesAnimation
 	JSR	HighlightCompletedLines
 
 	;; ::SHOULDDO an actual remove lines animation instead of hide::
+	LDA	#LINE_REMOVE_DELAY
+	JSR	WaitManyFrames
 
 	FOR_X	#0, INC, #.sizeof(cellsPerLine)
 		LDA	cellsPerLine, X
@@ -273,12 +292,7 @@ ROUTINE RemoveCompletedLinesAnimation
 				JSR	Ui__RemoveLine
 
 				LDA	#LINE_REMOVE_DELAY
-				STA	dropDelay
-
-				REPEAT
-					JSR	WaitFrame
-					DEC	dropDelay
-				UNTIL_ZERO
+				JSR	WaitManyFrames
 			PLX
 			TXY
 
@@ -317,40 +331,59 @@ ROUTINE HighlightCompletedLines
 
 
 
-;; Selects and draws the next piece.
+;; Load New Piece from nextPiece
 .A8
 .I16
-ROUTINE DetermineNextPiece
+ROUTINE NewPiece
 	; currentPiece = nextPiece
-	; statistics[currentPiece->statsIndex]++
 	; xPos = STARTING_XPOS
 	; yPos = 0
-	; dropDelay = LEVEL_1_DROP_DELAY
-	; x = Random(0, Pieces__COUNT)
-	; nextPiece = Pieces__Table[x]
 	;
 	; Ui__MoveGameField()
 	; Ui__DrawCurrentPiece()
-	; Ui__DrawStatistics()
-	; Ui__DrawNextPiece()
+	;
+	; if Ui__CheckPieceCollision() == true
+	;	GameOver()
+	; else
+	; 	dropDelay = LEVEL_1_DROP_DELAY
+	; 	statistics[currentPiece->statsIndex]++
+	;
+	; 	Ui__DrawStatistics()
+	;	DetermineNextPiece()
 
 	LDY	nextPiece
 	STY	currentPiece
-
-	;; ::TODO game over check::
-
-	LDX	a:Piece::statsIndex, Y
-
-	INC16	statistics, X
 
 	LDA	#STARTING_XPOS
 	STA	xPos
 	STZ	yPos
 
-	;; ::TODO drop delay determined by level::
+	JSR	Ui__MoveGameField
+	JSR	Ui__DrawCurrentPiece
 
-	LDA	#LEVEL_1_DROP_DELAY
-	STA	dropDelay
+	JSR	Ui__CheckPieceCollision
+	BCS	GameOver
+
+		;; ::TODO drop delay determined by level::
+		LDA	#LEVEL_1_DROP_DELAY
+		STA	dropDelay
+
+		LDY	currentPiece
+		LDX	a:Piece::statsIndex, Y
+		INC16	statistics, X
+		JSR	Ui__DrawStatistics
+
+	.assert * = DetermineNextPiece, lderror, "Bad Flow"
+
+
+
+;; Selects and draws the next piece.
+.A8
+.I16
+ROUTINE DetermineNextPiece
+	; x = Random(0, Pieces__COUNT)
+	; nextPiece = Pieces__Table[x]
+	; Ui__DrawNextPiece()
 
 	LDY	#Pieces__COUNT
 	JSR	Random__Rnd_U16Y
@@ -368,10 +401,37 @@ ROUTINE DetermineNextPiece
 	SEP	#$20
 .A8
 
-	JSR	Ui__MoveGameField
-	JSR	Ui__DrawCurrentPiece
-	JSR	Ui__DrawStatistics
 	JMP	Ui__DrawNextPiece
+
+
+
+;; Called when game is over
+.A8
+.I16
+ROUTINE GameOver
+	; playSound(SOUND_GAME_OVER)
+	; repeat
+	;	WaitFrame()
+	;	if Controls__pressed & (JOY_BUTTONS | JOY_START)
+	;		continuePlaying = false
+	;		return
+
+	;; ::SOUND GAME OVER::
+
+	REPEAT
+		JSR	WaitFrame
+
+		REP	#$20
+.A16
+		LDA	Controls__pressed
+		IF_BIT	#JOY_BUTTONS | JOY_START
+			STZ	continuePlaying
+			RTS
+		ENDIF
+
+		SEP	#$20
+.A8
+	FOREVER
 
 
 
@@ -384,6 +444,22 @@ ROUTINE WaitFrame
 	JSR	Controls__Update
 	JMP	Random__AddJoypadEntropy
 
+
+;; Waits many frames
+;; INPUT: A - number of frames to wait
+.A8
+.I16
+ROUTINE WaitManyFrames
+	; for dropDelay = A to 0
+	;	WaitFrame()
+
+	STA	dropDelay
+	REPEAT
+		JSR	WaitFrame
+		DEC	dropDelay
+	UNTIL_ZERO
+
+	RTS
 
 
 ENDMODULE
