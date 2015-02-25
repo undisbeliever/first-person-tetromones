@@ -3,6 +3,7 @@
 .include "routines/block.h"
 .include "routines/screen.h"
 .include "routines/random.h"
+.include "routines/math.h"
 
 .include "fptetromones.h"
 .include "controls.h"
@@ -22,8 +23,14 @@ GameVariables:
 
 	UINT8	level
 	UINT32	score
-	UINT16  lines
+	UINT16  nLines
 	UINT16	statistics, N_PIECES
+
+	;; Number of lines that are dropped by holding down.
+	UINT16	fastDropDistance
+
+	;; Number of lines needed to complete the level
+	UINT16	linesToNextLevel
 
 	;; Number of cells filled per line
 	BYTE	cellsPerLine, N_LINES + 4
@@ -64,6 +71,12 @@ ROUTINE	PlayGame
 	LDA	#1
 	STA	level
 
+	LDY	#10
+	STY	linesToNextLevel
+
+	LDA	#1
+	STA	continuePlaying
+
 	JSR	Ui__Init
 
 	JSR	DetermineNextPiece
@@ -96,17 +109,20 @@ ROUTINE	PlayGame
 .A8
 .I16
 ROUTINE GameLoop
-	; continuePlaying = 1
-	;
 	; repeat:
 	;	WaitFrame()
 	;
-	;	if Controls__held & JOYH_DOWN
+	;	if Controls__currentFrame & JOY_DOWN
 	;		dropDelay -= FAST_DROP_SPEED
 	;	else
 	;		dropDelay--;
 	;
 	;	if dropDelay < 0
+	;		if Controls__currentFrame * JOY_DOWN
+	;			fastDropDistance++
+	;		else
+	;			fastDropDistance = 0
+	;
 	;		c = Ui__CheckPieceDropCollision()
 	;		if c set
 	;			PlacePiece()
@@ -128,13 +144,10 @@ ROUTINE GameLoop
 	; until continuePlaying == false
 	;
 
-	LDA	#1
-	STA	continuePlaying
-
 	REPEAT
 		JSR	WaitFrame
 
-		LDA	Controls__held + 1
+		LDA	Controls__currentFrame + 1
 		IF_BIT	#JOYH_DOWN
 			LDA	dropDelay
 			SUB	#FAST_DROP_SPEED
@@ -144,6 +157,13 @@ ROUTINE GameLoop
 		ENDIF
 
 		IF_MINUS
+			LDA	Controls__currentFrame + 1
+			IF_BIT	#JOYH_DOWN
+				INC	fastDropDistance
+			ELSE
+				STZ	fastDropDistance
+			ENDIF
+
 			JSR	Ui__CheckPieceDropCollision
 			IF_C_SET
 				JSR	PlacePiece
@@ -176,7 +196,6 @@ ROUTINE GameLoop
 		LDA	continuePlaying
 	UNTIL_ZERO
 
-BREAKPOINT
 	RTS
 
 
@@ -190,31 +209,46 @@ ROUTINE PlacePiece
 	; Ui__DrawCurrentPieceOnField()
 	; nCompletedLines = AddToLineCounter()
 	;
+	; if fastDropDistance > 0
+	;	score += fastDropDistance - 1
+	;	fastDropDistance = 0
+	;
+	; UpdateScore()
+	;
 	; if nCompletedLines != 0
-	;	// ::TODO increment score::
-	;	playSound(COMPLETED_LINE_SOUND)
-	;	RemoveCompletedLinesAnimation()
+	;	ProcessCompletedLines()
 	; else
-	;	// ::TODO increment score::
 	;	playSound(DROP_PIECE_SOUND)
 	;
 	; NewPiece()
 
 	JSR	Ui__DrawCurrentPieceOnField
 
+	REP	#$21	; Clear carry
+.A16
+	; ::BUGFIX fastDropDistance is off by one::
+	LDA	fastDropDistance
+	IF_NOT_ZERO
+		DEC
+		ADC	score
+		STA	score
+		LDA	#0
+		ADC	score + 2
+		STA	score + 2
+
+		STZ	fastDropDistance
+	ENDIF
+
+	SEP	#$20
+.A8
+
+	JSR	UpdateScore
 	JSR	AddToLineCounter
 
 	LDA	nCompletedLines
 	IF_NOT_ZERO
-		;; ::TODO increment score::
-		;; ::SOUND COMPLETED_LINE_SOUND ::
-
-		JSR	RemoveCompletedLinesAnimation
-
-		;; ::TODO increment nLines::
-		;; ::TODO check if nLines > linesToNextLevel::
+		JSR	ProcessCompletedLines
 	ELSE
-		;; ::TODO increment score::
 		;; ::SOUND DROP_PIECE_SOUND ::
 	ENDIF	
 
@@ -256,6 +290,93 @@ ROUTINE AddToLineCounter
 	.endrepeat
 
 	RTS
+
+
+;; Increase score, remove completed lines
+.A8
+.I16
+ROUTINE ProcessCompletedLines
+	; if nCompletedLines == 4
+	;	playSound(SOUND_COMPLETED_TETRIS)
+	; else
+	;	playSound(SOUND_COMPLETED_LINE)
+	;
+	; nLines += nCompletedLines
+	; score += level * ScorePerLinesCleared[nCompletedLines - 1]
+	;
+	; if nLines >= linesToNextLevel
+	;	linesToNextLevel += 10
+	;	level++
+	;	Ui__DrawLevel()
+	;	playSound(SOUND_NEW_LEVEL)
+	;
+	; Ui__DrawLines()
+	; UpdateScore()
+	;
+	; RemoveCompletedLinesAnimation()
+	; //::TODO set screen color::
+
+	LDA	nCompletedLines
+	CMP	#4
+	IF_EQ
+		;; ::SOUND COMPLETED_TETRIS_SOUND ::
+	ELSE
+		;; ::SOUND COMPLETED_LINE_SOUND ::
+	ENDIF
+
+	REP	#$20
+.A16
+	LDA	nCompletedLines
+	AND	#$00FF
+	ADD	nLines
+	STA	nLines
+
+	LDA	nCompletedLines
+	AND	#$00FF
+	DEC
+	ASL
+	TAX
+
+	SEP	#$20
+.A8
+	LDY	ScorePerLinesCleared, X
+	LDA	level
+	JSR	Math__Multiply_U16Y_U8A_U32
+
+	REP	#$21	; Also clear carry
+.A16
+
+	TYA
+	ADC	score
+	STA	score
+	LDA	Math__product32 + 2
+	ADC	score + 2
+	STA	score + 2
+
+	LDA	nLines
+	CMP	linesToNextLevel
+	IF_GE
+		LDA	linesToNextLevel
+		ADD	#10
+		STA	linesToNextLevel
+
+		SEP	#$20
+.A8
+		INC	level
+		JSR	Ui__DrawLevelNumber
+	ENDIF
+
+	SEP	#$20
+.A8
+	JSR	UpdateScore
+;	JSR	Ui__DrawLines
+
+	JSR	RemoveCompletedLinesAnimation
+
+	; ::TODO set piece colors::
+
+	RTS
+
 
 
 ;; Remove Completed Lines, slowly
@@ -405,6 +526,34 @@ ROUTINE DetermineNextPiece
 
 
 
+;; Displays the score and checks if the hi score needs updating
+.A8
+.I16
+ROUTINE UpdateScore
+	; Ui__DrawScore
+	;
+	; if score >= hiScore
+	;	hiScore = score
+	;	Ui__DrawHiScore
+
+	JSR	Ui__DrawScore
+
+	LDY	score + 2
+	CPY	hiScore + 2
+	IF_LE
+		LDY	score
+		CPY	hiScore
+		IF_LT
+			RTS
+		ENDIF
+	ENDIF
+
+	LDXY	score
+	STXY	hiScore
+	JMP	Ui__DrawHiScore
+
+
+
 ;; Called when game is over
 .A8
 .I16
@@ -462,6 +611,13 @@ ROUTINE WaitManyFrames
 	RTS
 
 
-ENDMODULE
+.rodata
 
+LABEL ScorePerLinesCleared
+	.word	40
+	.word	100
+	.word	300
+	.word	1200
+
+ENDMODULE
 
