@@ -369,7 +369,7 @@ ROUTINE ProcessCompletedLines
 	SEP	#$20
 .A8
 	JSR	UpdateScore
-;	JSR	Ui__DrawLines
+	JSR	Ui__DrawNLines
 
 	JSR	RemoveCompletedLinesAnimation
 

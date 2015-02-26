@@ -57,6 +57,9 @@ DRAW_N_STATS        =  7
 DRAW_NEXT_ROW       = 25
 DRAW_NEXT_COLUMN    = 15
 
+DRAW_NLINES_ROW     = 20
+DRAW_NLINES_COLUMN  =  1
+
 
 ;; VRAM Map
 ;; WORD ADDRESSES
@@ -138,7 +141,13 @@ IMPORT_MODULE Ui
 	;; Draws the curren piece on the game field
 	;; REQUIRE: 8 bit A, 16 bit Index
 	ROUTINE	DrawCurrentPieceOnField
-	
+
+	;; Draws the number of lines to the screen
+	;; REQUIRE: 8 bit A, 16 bit Index
+	;; INPUT:
+	;;	A - the level number
+	ROUTINE DrawNLines
+
 	;; Draws the level number to the screen
 	;; REQUIRE: 8 bit A, 16 bit Index
 	;; INPUT:

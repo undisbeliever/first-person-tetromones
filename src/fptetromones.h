@@ -32,9 +32,11 @@ FAST_DROP_SPEED = 20
 
 IMPORT_MODULE FPTetromones
 
+	UINT32	hiScore
+
 	UINT8	level
 	UINT32	score
-	UINT32	hiScore
+	UINT16  nLines
 	UINT16	statistics, N_PIECES
 
 	ADDR	nextPiece

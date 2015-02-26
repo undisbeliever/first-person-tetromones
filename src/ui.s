@@ -45,6 +45,7 @@ ROUTINE Init
 	JSR	DrawLevelNumber
 	JSR	DrawStatistics
 	JSR	DrawHiScore
+	JSR	DrawNLines
 	JSR	DrawScore
 
 	STZ	updateBufferOnZero
@@ -658,6 +659,35 @@ ROUTINE DrawNextPiece
 
 .A8
 .I16
+ROUTINE DrawNLines
+	; y = FPTetromones__nLines
+	; tmp = DRAW_LEVEL_COLUMN * SCREEN_TILE_WIDTH + DRAW_LEVEL_ROW
+	; for i = 0 to 4
+	; 	y, x = y / 10, y % 10
+	;	screenBuffer[tmp - i] = y + NUMBER_DIGIT_DELTA
+	;	screenBuffer[tmp + 32 - i] = y + NUMBER_DIGIT_DELTA + NUMBER_DIGIT_SECOND_HALF_DELTA
+
+	LDY	FPTetromones__nLines
+
+	.repeat 4, i
+		LDA	#10
+		JSR	Math__Divide_U16Y_U8A
+
+		TXA
+		LDX	drawNumberPos
+		ADD	#NUMBER_DIGIT_DELTA
+		STA	screenBuffer + DRAW_NLINES_COLUMN * SCREEN_TILE_WIDTH + DRAW_NLINES_ROW - i
+
+		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA	
+		STA	screenBuffer + DRAW_NLINES_COLUMN * SCREEN_TILE_WIDTH + 32 + DRAW_NLINES_ROW - i
+	.endrepeat
+
+	RTS
+
+
+
+.A8
+.I16
 ROUTINE DrawLevelNumber
 	; y = score
 	; tmp = DRAW_LEVEL_COLUMN * SCREEN_TILE_WIDTH + DRAW_LEVEL_ROW
@@ -737,6 +767,7 @@ ROUTINE _DrawNumber_3_U16Y
 	.endrepeat
 
 	RTS
+
 
 
 .A8
