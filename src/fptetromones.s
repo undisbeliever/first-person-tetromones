@@ -574,6 +574,8 @@ ROUTINE GameOver
 .A16
 		LDA	Controls__pressed
 		IF_BIT	#JOY_BUTTONS | JOY_START
+			SEP	#$20
+
 			STZ	continuePlaying
 			RTS
 		ENDIF
