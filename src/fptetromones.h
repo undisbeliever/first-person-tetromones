@@ -19,6 +19,10 @@ NTSC_FPS = 60
 PAL_FPS = 50
 
 STARTING_XPOS = 14
+STARTING_YPOS = 0
+
+SHOW_BOARD_XPOS = 14
+SHOW_BOARD_YPOS = 10
 
 ;; Number of frames to wait when dropping a line
 LINE_REMOVE_DELAY = 12

@@ -18,6 +18,7 @@ LEVEL_1_DROP_DELAY = 50
 
 .segment "SHADOW"
 	UINT32  hiScore
+	BYTE	firstGameOnZero
 
 GameVariables:
 
@@ -78,26 +79,20 @@ ROUTINE	PlayGame
 	STA	continuePlaying
 
 	JSR	Ui__Init
-
-	JSR	DetermineNextPiece
-	JSR	NewPiece
+	JSR	DetermineNextPiece	;; ::BUGFIX required for SNES9x::
 
 	JSR	Screen__FadeIn
 
-	LDY	JOY1
-	CPY	#JOY_SELECT
+	JSR	WaitForButtonPress
+
+	LDA	JOY1H
+	CMP	#JOYH_SELECT
 	IF_EQ
-		REPEAT
-			;; ::DEBUG - Test Random Number generator::
-			JSR	DetermineNextPiece
-
-			LDA	#10
-			STA	yPos
-			JSR	Ui__MoveGameField
-
-			JSR	WaitFrame
-		FOREVER
+		JSR	TestRandomizer
 	ENDIF
+
+	JSR	DetermineNextPiece
+	JSR	NewPiece
 
 	JSR	GameLoop
 
@@ -559,30 +554,75 @@ ROUTINE UpdateScore
 .I16
 ROUTINE GameOver
 	; playSound(SOUND_GAME_OVER)
-	; repeat
-	;	WaitFrame()
-	;	if Controls__pressed & (JOY_BUTTONS | JOY_START)
-	;		continuePlaying = false
-	;		return
+	; WaitForButtonPress()
+	; continuePlaying = false
 
 	;; ::SOUND GAME OVER::
 
+	JSR	WaitForButtonPress
+	STZ	continuePlaying
+	RTS
+
+
+
+;; Tests the randomizer code by 
+.A8
+.I16
+ROUTINE TestRandomizer
+	; repeat
+	;	DetermineNextPiece()
+	;	statistics[nextPiece->statsIndex]++
+	;	if statsIndex[nextPiece->statsIndex] == 999
+	;		Ui__DrawHiScore()
+	;		Stop()
+	;	else
+	;		Ui__DrawStatistics()
+	;
+	;	WaitFrame()
+
 	REPEAT
+		JSR	DetermineNextPiece
+
+		LDY	nextPiece
+		LDX	a:Piece::statsIndex, Y
+		INC16	statistics, X
+
+		LDY	statistics, X
+		CPY	#999
+		IF_EQ
+			JSR	Ui__DrawStatistics
+			REPEAT
+				WAI
+			FOREVER
+		ENDIF
+
+		JSR	Ui__DrawStatistics
+
+		JSR	WaitFrame
+	FOREVER
+
+
+
+;; Waits until the user presses a button
+.A8
+.I16
+ROUTINE WaitForButtonPress
+	; repeat
+	;	WaitFrame()
+	;	if Controls__pressed & (JOY_BUTTONS | JOY_START)
+	;		return
+
 		JSR	WaitFrame
 
 		REP	#$20
 .A16
 		LDA	Controls__pressed
-		IF_BIT	#JOY_BUTTONS | JOY_START
-			SEP	#$20
-
-			STZ	continuePlaying
-			RTS
-		ENDIF
+		AND	#JOY_BUTTONS | JOY_START
 
 		SEP	#$20
 .A8
-	FOREVER
+		BEQ	WaitForButtonPress
+	RTS
 
 
 

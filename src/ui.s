@@ -37,11 +37,12 @@ ROUTINE Init
 
 	JSR	SetupScreen
 
-	LDY	SCREEN_CENTER_X
+	LDY	#SCREEN_TOP_HOFS + 8 * SHOW_BOARD_XPOS
 	STY	mode7Hofs
-	LDY	SCREEN_CENTER_Y
+	LDY	#SCREEN_TOP_VOFS + 8 * SHOW_BOARD_YPOS
 	STY	mode7Vofs
 
+	JSR	Ui__HideCurrentPiece
 	JSR	DrawLevelNumber
 	JSR	DrawStatistics
 	JSR	DrawHiScore
