@@ -10,4 +10,5 @@ resources/*.map
 resources/*.mp7
 resources/*.pc7
 resources/*.clr
+tables/*.inc
 

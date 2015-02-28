@@ -86,6 +86,14 @@ IMPORT_MODULE Ui
 	;; REQUIRES: 8 bit A, 16 bit Index
 	ROUTINE MoveGameField
 
+	;; Rotates the screen counter clockwise 90 degrees.
+	;; REQUIRES: 8 bit A, 16 bit Index
+	ROUTINE RotateCc
+
+	;; Rotates the screen clockwise 90 degrees.
+	;; REQUIRES: 8 bit A, 16 bit Index
+	ROUTINE RotateCw
+
 	;; Checks to see if the current piece will collide
 	;; with the current game map in its current position.
 	;;
@@ -106,6 +114,20 @@ IMPORT_MODULE Ui
 	;; REQUIRE: 8 bit A, 16 bit Index
 	;; RETURN: c set if current piece cannot move to the right
 	ROUTINE CheckPieceRightCollision
+
+	;; Checks to see if the current piece will collide
+	;; with the current game map if the piece is rotated clockwise.
+	;;
+	;; REQUIRE: 8 bit A, 16 bit Index
+	;; RETURN: c set if current piece cannot move to the right
+	ROUTINE CheckPieceRotateCwCollision
+
+	;; Checks to see if the current piece will collide
+	;; with the current game map if the piece is rotated counter clockwise.
+	;;
+	;; REQUIRE: 8 bit A, 16 bit Index
+	;; RETURN: c set if current piece cannot move to the right
+	ROUTINE CheckPieceRotateCcCollision
 
 	;; Checks to see if the current piece will collide
 	;; with the current game map on the next drop.

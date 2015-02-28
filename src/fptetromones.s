@@ -105,7 +105,7 @@ ROUTINE	PlayGame
 .I16
 ROUTINE GameLoop
 	; repeat:
-	;	WaitFrame()
+	;	Screen__WaitFrame()
 	;
 	;	if Controls__currentFrame & JOY_DOWN
 	;		dropDelay -= FAST_DROP_SPEED
@@ -140,7 +140,7 @@ ROUTINE GameLoop
 	;
 
 	REPEAT
-		JSR	WaitFrame
+		JSR	Screen__WaitFrame
 
 		LDA	Controls__currentFrame + 1
 		IF_BIT	#JOYH_DOWN
@@ -572,13 +572,18 @@ ROUTINE TestRandomizer
 	; repeat
 	;	DetermineNextPiece()
 	;	statistics[nextPiece->statsIndex]++
-	;	if statsIndex[nextPiece->statsIndex] == 999
-	;		Ui__DrawHiScore()
-	;		Stop()
-	;	else
-	;		Ui__DrawStatistics()
+	;	Ui__DrawHiScore()
 	;
-	;	WaitFrame()
+	;	if statsIndex[nextPiece->statsIndex] == 999
+	;		WaitForButtonPress()
+	;		return
+	;
+	;	if Controls__currentFrame & JOY_ROTATE_CC
+	;		Ui__RotateCc()
+	;	elseif Controls__currentFrame & JOY_ROTATE_CW
+	;		Ui__RotateCw()
+	;	
+	;	Screen__WaitFrame()
 
 	REPEAT
 		JSR	DetermineNextPiece
@@ -591,14 +596,33 @@ ROUTINE TestRandomizer
 		CPY	#999
 		IF_EQ
 			JSR	Ui__DrawStatistics
-			REPEAT
-				WAI
-			FOREVER
+			JSR	WaitForButtonPress
+			RTS
 		ENDIF
 
 		JSR	Ui__DrawStatistics
 
-		JSR	WaitFrame
+		REP	#$20
+.A16
+
+
+		LDA	Controls__currentFrame
+		IF_BIT	#JOY_ROTATE_CC
+			SEP	#$20
+.A8
+			JSR	Ui__RotateCc
+.A16
+		ELSE_BIT #JOY_ROTATE_CW
+			SEP	#$20
+.A8
+			JSR	Ui__RotateCw
+.A16
+		ENDIF
+
+		SEP	#$20
+.A8
+
+		JSR	Screen__WaitFrame
 	FOREVER
 
 
@@ -608,11 +632,11 @@ ROUTINE TestRandomizer
 .I16
 ROUTINE WaitForButtonPress
 	; repeat
-	;	WaitFrame()
+	;	Screen__WaitFrame()
 	;	if Controls__pressed & (JOY_BUTTONS | JOY_START)
 	;		return
 
-		JSR	WaitFrame
+		JSR	Screen__WaitFrame
 
 		REP	#$20
 .A16
@@ -626,15 +650,6 @@ ROUTINE WaitForButtonPress
 
 
 
-;; Waits ONE frame
-;; Also calls routines that are required on every frame.
-.A8
-.I16
-ROUTINE WaitFrame
-	JSR	Screen__WaitFrame
-	JSR	Controls__Update
-	JMP	Random__AddJoypadEntropy
-
 
 ;; Waits many frames
 ;; INPUT: A - number of frames to wait
@@ -642,11 +657,11 @@ ROUTINE WaitFrame
 .I16
 ROUTINE WaitManyFrames
 	; for dropDelay = A to 0
-	;	WaitFrame()
+	;	Screen__WaitFrame()
 
 	STA	dropDelay
 	REPEAT
-		JSR	WaitFrame
+		JSR	Screen__WaitFrame
 		DEC	dropDelay
 	UNTIL_ZERO
 

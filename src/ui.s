@@ -17,6 +17,10 @@ MODULE Ui
 
 	UINT16	mode7Hofs
 	UINT16	mode7Vofs
+	ADDR	mode7MatrixPtr
+
+	;; Index within RotationTable for current rotation alignment
+	ADDR	rotationIndex
 
 	BYTE	screenBuffer, SCREEN_TILE_WIDTH * SCREEN_TILE_HEIGHT
 	BYTE	updateBufferOnZero
@@ -25,6 +29,7 @@ MODULE Ui
 	BYTE	drawPieceRow
 	BYTE	drawPieceColumn
 	WORD	drawPieceTemp
+
 
 	SAME_VARIABLE	drawPieceTile, drawNumberPos
 
@@ -41,6 +46,12 @@ ROUTINE Init
 	STY	mode7Hofs
 	LDY	#SCREEN_TOP_VOFS + 8 * SHOW_BOARD_YPOS
 	STY	mode7Vofs
+
+	LDX	#0
+	STX	rotationIndex
+
+	LDX	#.loword(RotateTable_0)
+	STX	mode7MatrixPtr
 
 	JSR	Ui__HideCurrentPiece
 	JSR	DrawLevelNumber
@@ -67,6 +78,16 @@ ROUTINE VBlank
 	LDA	mode7Vofs + 1
 	STA	M7VOFS
 
+	; store mode 7 registers from RotateTable data
+	LDX	mode7MatrixPtr
+	.repeat	4, i
+		; low
+		LDA	a:i * 2 + 0, X
+		STA	M7A + i
+		; high
+		LDA	a:i * 2 + 1, X
+		STA	M7A + i
+	.endrepeat
 
 	LDA	updateOamBufferOnZero
 	IF_ZERO
@@ -157,9 +178,126 @@ ROUTINE MoveGameField
 
 .A8
 .I16
+ROUTINE RotateCc
+	; mode7MatrixPtr = RotationTable[rotationIndex]
+	;
+	; for drawPieceTemp = N_ROTATION_FRAMES - 1 to 0
+	;	Screen__WaitFrame()
+	;	mode7MatrixPtr += 1 // actually 4 words = 8
+	;
+	; rotationIndex = (rotationIndex + 2) % (4 * 2)
+
+	REP	#$20
+.A16
+	LDX	rotationIndex
+	LDA	RotationTable, X
+	STA	mode7MatrixPtr
+
+	LDA	#N_ROTATION_FRAMES - 1
+	STA	drawPieceTemp
+	REPEAT
+		JSR	Screen__WaitFrame
+
+		LDA	mode7MatrixPtr
+		ADD	#4 * 2
+		STA	mode7MatrixPtr
+
+		DEC	drawPieceTemp
+	UNTIL_ZERO
+
+	LDA	rotationIndex
+	INC
+	INC
+	AND	#$07
+	STA	rotationIndex
+
+	SEP	#$20
+.A8
+
+	RTS
+
+
+
+.A8
+.I16
+ROUTINE RotateCw
+	; rotationIndex = (rotationIndex - 2) % (4 * 2)
+	; mode7MatrixPtr = RotationTable[rotationIndex] + (N_ROTATION_FRAMES - 1) * 8 //for 4 words
+	;
+	; for drawPieceTemp = N_ROTATION_FRAMES - 1 to 0
+	;	Screen__WaitFrame()
+	;	mode7MatrixPtr -= 1 // actually 4 words = 8
+
+	REP	#$20
+.A16
+
+	LDA	rotationIndex
+	DEC
+	DEC
+	AND	#$07
+	STA	rotationIndex
+
+	TAX
+	LDA	RotationTable, X
+	ADC	#(N_ROTATION_FRAMES - 1) * 4 * 2
+	STA	mode7MatrixPtr
+
+	LDA	#N_ROTATION_FRAMES - 1
+	STA	drawPieceTemp
+	REPEAT
+		JSR	Screen__WaitFrame
+
+		LDA	mode7MatrixPtr
+		SUB	#4 * 2
+		STA	mode7MatrixPtr
+
+		DEC	drawPieceTemp
+	UNTIL_ZERO
+
+	SEP	#$20
+.A8
+
+	RTS
+
+
+.A8
+.I16
+ROUTINE CheckPieceRotateCwCollision
+	; _CheckPieceCollision_CurrentPosition(FPTetromones__currentPiece->rotateCwPtr)
+
+	LDY	FPTetromones__currentPiece
+	LDX	a:Piece::rotateCwPtr, Y
+
+	BRA	_CheckPieceCollision_CurrentPosition
+
+
+.A8
+.I16
+ROUTINE CheckPieceRotateCcCollision
+	; _CheckPieceCollision_CurrentPosition(FPTetromones__currentPiece->rotateCcPtr)
+
+	LDY	FPTetromones__currentPiece
+	LDX	a:Piece::rotateCcPtr, Y
+
+	BRA	_CheckPieceCollision_CurrentPosition
+
+
+.A8
+.I16
 ROUTINE CheckPieceCollision
+	; _CheckPieceCollision_CurrentPosition(FPTetromones__currentPiece)
+
+	LDX	FPTetromones__currentPiece
+
+	.assert * = _CheckPieceCollision_CurrentPosition, lderror, "Bad Flow"
+
+
+;; INPUT: x = piece to test
+.A8
+.I16
+ROUTINE _CheckPieceCollision_CurrentPosition
 	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos
-	; _CheckPieceCollision(y);
+	; _CheckPieceCollision(y, x);
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
 	REP	#$20
@@ -182,12 +320,11 @@ ROUTINE CheckPieceCollision
 	BRA	_CheckPieceCollision
 
 
-
 .A8
 .I16
 ROUTINE CheckPieceLeftCollision
 	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos - 1
-	; _CheckPieceCollision(y);
+	; _CheckPieceCollision(y, FPTetromones__currentPiece);
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
 	REP	#$20
@@ -208,6 +345,8 @@ ROUTINE CheckPieceLeftCollision
 	DEC
 	TAY
 
+	LDX	FPTetromones__currentPiece
+
 	BRA	_CheckPieceCollision
 
 
@@ -217,7 +356,7 @@ ROUTINE CheckPieceLeftCollision
 .I16
 ROUTINE CheckPieceRightCollision
 	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos + 1
-	; _CheckPieceCollision(y);
+	; _CheckPieceCollision(y, FPTetromones__currentPiece);
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
 	REP	#$20
@@ -238,15 +377,16 @@ ROUTINE CheckPieceRightCollision
 	ADC	drawPieceTemp
 	TAY
 
+	LDX	FPTetromones__currentPiece
+
 	BRA	_CheckPieceCollision
-
-
 
 
 .A8
 .I16
 ROUTINE CheckPieceDropCollision
 	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos + 1) * SCREEN_TILE_WIDTH + FPTetromones__xPos
+	; _CheckPieceCollision(y, FPTetromones__currentPiece);
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
 	REP	#$20
@@ -266,12 +406,15 @@ ROUTINE CheckPieceDropCollision
 	ADD	drawPieceTemp
 	TAY
 
+	LDX	FPTetromones__currentPiece
+
 	.assert * = _CheckPieceCollision, lderror, "Bad Flow"
 
 
 
 ;; Checks collision against a given tilemap location
 ;; INPUT: y = tilemap index
+;;	  x = piece to test
 .I16
 ROUTINE _CheckPieceCollision
 	; nextPiece = FPTetromones__currentPiece
@@ -291,8 +434,6 @@ ROUTINE _CheckPieceCollision
 
 	SEP	#$20
 .A8
-
-	LDX	FPTetromones__currentPiece
 
 	LDA	#PIECE_HEIGHT
 	STA	drawPieceRow
@@ -853,18 +994,6 @@ ROUTINE SetupScreen
 	TransferToVramLocationDataHigh	gameFieldTiles, 0
 	TransferToCgramLocation		gameFieldPalette, 0, 256
 
-	; Reset rotation to normal
-	LDA	#1
-
-	STZ	M7A
-	STA	M7A
-	STZ	M7B
-	STZ	M7B
-	STZ	M7C
-	STZ	M7C
-	STZ	M7D
-	STA	M7D
-
 	LDA	#.lobyte(SCREEN_CENTER_X)
 	STA	M7X
 	LDA	#.hibyte(SCREEN_CENTER_X)
@@ -888,6 +1017,7 @@ LABEL UiInitialBuffer
 	.endrepeat
 UiInitialBuffer_End:
 
+	.include "tables/rotations.inc"
 
 ENDMODULE
 

@@ -9,6 +9,7 @@ MODULE Controls
 	WORD	pressed
 	WORD	held
 	WORD	previousFrame
+	WORD	currentFrame
 
 	WORD	invertedPrevious
 
@@ -59,6 +60,7 @@ _SkipResetDelay:
 .A8
 .I16
 ROUTINE Update
+	; currentFrame = JOY1
 	; held = JOY1 & previousFrame
 	; previousFrame = JOY1
 	; pressed = JOY1 & invertedPrevious
@@ -72,6 +74,7 @@ ROUTINE Update
 	REP	#$20
 .A16
 	LDA	JOY1
+	STA	currentFrame
 	AND	previousFrame
 	STA	held
 

@@ -11,6 +11,10 @@
 
 REPEAT_DELAY = 20
 
+JOY_ROTATE_CC = JOY_L | JOY_B
+JOY_ROTATE_CW = JOY_R | JOY_Y
+
+
 IMPORT_MODULE Controls
 	;; New buttons pressed on current frame.
 	;; The directional buttons impletement a repeat delay
@@ -24,8 +28,7 @@ IMPORT_MODULE Controls
 	WORD	previousFrame
 
 	;; The state of the current frame
-	CONST	currentFrame, JOY1
-
+	WORD	currentFrame
 
 	;; Updates the control variables
 	;; REQUIRE: 8 bit A, 16 bit Index, AUTOJOY enabled
