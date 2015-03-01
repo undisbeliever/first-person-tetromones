@@ -27,6 +27,9 @@ GameVariables:
 	UINT16  nLines
 	UINT16	statistics, N_PIECES
 
+	;; Address of the the RotationMoveControls struct
+	ADDR	rotationsControls
+
 	;; Number of lines that are dropped by holding down.
 	UINT16	fastDropDistance
 
@@ -78,6 +81,9 @@ ROUTINE	PlayGame
 	LDA	#1
 	STA	continuePlaying
 
+	LDX	#.loword(Controls__InitialRotationMoveControls)
+	STX	rotationsControls
+
 	JSR	Ui__Init
 	JSR	DetermineNextPiece	;; ::BUGFIX required for SNES9x::
 
@@ -106,7 +112,7 @@ ROUTINE GameLoop
 	; repeat:
 	;	Screen__WaitFrame()
 	;
-	;	if Controls__currentFrame & JOY_DOWN
+	;	if Controls__currentFrame & rotationsControls->joyh_Drop
 	;		dropDelay -= FAST_DROP_SPEED
 	;	else
 	;		dropDelay--;
@@ -125,27 +131,33 @@ ROUTINE GameLoop
 	;			dropDelay = LEVEL_1_DROP_DELAY
 	;			Ui__MoveGameField()
 	;
-	;	if Controls__pressed & JOYH_LEFT
+	;
+	;	if Controls__pressed & rotationsControls->joyh_MoveLeft
 	;		if Ui__CheckPieceLeftCollision() != true
 	;			xPos--;
 	;			Ui__MoveGameField()
 	;			PlaySound(SOUND_MOVE_LEFT)
-	;	else if Controls__pressed & JOYH_RIGHT
+	;
+	;	else if Controls__pressed & rotationsControls->joyh_MoveRight
 	;		if Ui__CheckPieceRightCollision() != true
 	;			xPos++;
 	;			Ui__MoveGameField()
 	;			PlaySound(SOUND_MOVE_RIGHT)
+	;
 	;
 	;	if Controls__pressed & JOY_ROTATE_CC
 	;		if Ui__CheckPieceRotateCcCollision() != true
 	;			PlaySound(SOUND_ROTATE_CC)
 	;			Ui__RotateCc()
 	;			currentPiece = currentPiece->rotateCcPtr
+	;			rotationsControls = rotationsControls->rotateCcPtr
+	;
 	;	else if Controls__pressed & JOY_ROTATE_CW
 	;		if Ui__CheckPieceRotateCcCollision() != true
 	;			PlaySound(SOUND_ROTATE_CW)
 	;			Ui__RotateCw()
 	;			currentPiece = currentPiece->rotateCwPtr
+	;			rotationsControls = rotationsControls->rotateCwPtr
 	;
 	; until continuePlaying == false
 	;
@@ -153,8 +165,9 @@ ROUTINE GameLoop
 	REPEAT
 		JSR	Screen__WaitFrame
 
+		LDX	rotationsControls
 		LDA	Controls__currentFrame + 1
-		IF_BIT	#JOYH_DOWN
+		IF_BIT	a:RotationMoveControls::joyh_Drop, X
 			LDA	dropDelay
 			SUB	#FAST_DROP_SPEED
 			STA	dropDelay
@@ -182,15 +195,17 @@ ROUTINE GameLoop
 			ENDIF
 		ENDIF
 
+		LDX	rotationsControls
 		LDA	Controls__pressed + 1
-		IF_BIT	#JOYH_LEFT
+		IF_BIT	a:RotationMoveControls::joyh_MoveLeft, X
 			JSR	Ui__CheckPieceLeftCollision
 			IF_C_CLEAR
 				DEC	xPos
 				JSR	Ui__MoveGameField
 				; ::SOUND move left::
 			ENDIF
-		ELSE_BIT	#JOYH_RIGHT
+
+		ELSE_BIT a:RotationMoveControls::joyh_MoveRight, X
 			JSR	Ui__CheckPieceRightCollision
 			IF_C_CLEAR
 				INC	xPos
@@ -209,10 +224,14 @@ ROUTINE GameLoop
 			IF_C_CLEAR
 				; ::SOUND SOUND_ROTATE_CC::
 				JSR	Ui__RotateCc
-				
+
 				LDX	currentPiece
 				LDY	a:Piece::rotateCcPtr, X
 				STY	currentPiece
+
+				LDX	rotationsControls
+				LDY	a:RotationMoveControls::rotateCcPtr, X
+				STY	rotationsControls
 			ENDIF
 .A16
 		ELSE_BIT #JOY_ROTATE_CW
@@ -226,6 +245,10 @@ ROUTINE GameLoop
 				LDX	currentPiece
 				LDY	a:Piece::rotateCwPtr, X
 				STY	currentPiece
+
+				LDX	rotationsControls
+				LDY	a:RotationMoveControls::rotateCwPtr, X
+				STY	rotationsControls
 			ENDIF
 		ENDIF
 

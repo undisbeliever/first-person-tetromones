@@ -15,6 +15,17 @@ JOY_ROTATE_CC = JOY_L | JOY_B
 JOY_ROTATE_CW = JOY_R | JOY_Y
 
 
+.struct RotationMoveControls
+	rotateCwPtr	.addr
+	rotateCcPtr	.addr
+
+	joyh_Drop	.byte
+	joyh_MoveLeft	.byte
+	joyh_MoveRight	.byte
+.endstruct
+
+
+
 IMPORT_MODULE Controls
 	;; New buttons pressed on current frame.
 	;; The directional buttons impletement a repeat delay
@@ -33,6 +44,9 @@ IMPORT_MODULE Controls
 	;; Updates the control variables
 	;; REQUIRE: 8 bit A, 16 bit Index, AUTOJOY enabled
 	ROUTINE Update
+
+	;; Initial Controls, 0 degrees.
+	LABEL	InitialRotationMoveControls
 
 ENDMODULE
 

@@ -5,6 +5,47 @@
 
 MODULE Controls
 
+.rodata
+
+LABEL	InitialRotationMoveControls
+RotationControls_0:
+	.addr	RotationControls_270
+	.addr	RotationControls_90
+
+	.byte	JOYH_DOWN
+	.byte	JOYH_LEFT
+	.byte	JOYH_RIGHT
+
+
+RotationControls_90:
+	.addr	RotationControls_0
+	.addr	RotationControls_180
+
+	.byte	JOYH_RIGHT
+	.byte	JOYH_DOWN
+	.byte	JOYH_UP
+
+
+RotationControls_180:
+	.addr	RotationControls_90
+	.addr	RotationControls_270
+
+	.byte	JOYH_UP
+	.byte	JOYH_RIGHT
+	.byte	JOYH_LEFT
+
+
+RotationControls_270:
+	.addr	RotationControls_180
+	.addr	RotationControls_0
+
+	.byte	JOYH_LEFT
+	.byte	JOYH_UP
+	.byte	JOYH_DOWN
+
+
+
+
 .segment "SHADOW"
 	WORD	pressed
 	WORD	held
