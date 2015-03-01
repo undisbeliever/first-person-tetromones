@@ -13,16 +13,13 @@
 
 MODULE FPTetromones
 
-;; ::DEBUG replace with table::
-LEVEL_1_DROP_DELAY = 50
-
 .segment "SHADOW"
 	UINT32  hiScore
 	BYTE	firstGameOnZero
 
 GameVariables:
 
-	UINT8	level
+	UINT16	level
 	UINT32	score
 	UINT16  nLines
 	UINT16	statistics, N_PIECES
@@ -128,7 +125,7 @@ ROUTINE GameLoop
 	;			PlacePiece()
 	;		else
 	;			yPos += 1
-	;			dropDelay = LEVEL_1_DROP_DELAY
+	;			SetDropDelay()
 	;			Ui__MoveGameField()
 	;
 	;
@@ -188,9 +185,8 @@ ROUTINE GameLoop
 				JSR	PlacePiece
 			ELSE
 				INC	yPos
-				LDA	#LEVEL_1_DROP_DELAY
-				STA	dropDelay
 
+				JSR	SetDropDelay
 				JSR	Ui__MoveGameField
 			ENDIF
 		ENDIF
@@ -528,7 +524,7 @@ ROUTINE NewPiece
 	; if Ui__CheckPieceCollision() == true
 	;	GameOver()
 	; else
-	; 	dropDelay = LEVEL_1_DROP_DELAY
+	;	SetDropDelay()
 	; 	statistics[currentPiece->statsIndex]++
 	;
 	; 	Ui__DrawStatistics()
@@ -546,10 +542,7 @@ ROUTINE NewPiece
 
 	JSR	Ui__CheckPieceCollision
 	BCS	GameOver
-
-		;; ::TODO drop delay determined by level::
-		LDA	#LEVEL_1_DROP_DELAY
-		STA	dropDelay
+		JSR	SetDropDelay
 
 		LDY	currentPiece
 		LDX	a:Piece::statsIndex, Y
@@ -585,6 +578,28 @@ ROUTINE DetermineNextPiece
 .A8
 
 	JMP	Ui__DrawNextPiece
+
+
+
+;; Sets the drop delay to to the level's GravityFramesPerCellTable value
+.A8
+.I16
+ROUTINE SetDropDelay
+	;	x = level
+	;	if x >= GRAVITY_MAX
+	;		x = GRAVITY_MAX_LEVEL - 1
+	; 	dropDelay = GravityFramesPerCellTable[x]
+
+	LDX	level
+	CPX	#GRAVITY_MAX_LEVEL
+	IF_GE
+		LDX	#GRAVITY_MAX_LEVEL - 1
+	ENDIF
+
+	LDA	GravityFramesPerCellTable, X
+	STA	dropDelay
+
+	RTS
 
 
 
@@ -751,6 +766,33 @@ LABEL ScorePerLinesCleared
 	.word	100
 	.word	300
 	.word	1200
+
+
+LABEL GravityFramesPerCellTable
+	.byte	0	; level 0
+	.byte	48	; level 1
+	.byte	43	; level 2
+	.byte	38	; level 3
+	.byte	33	; level 4
+	.byte	28	; level 5
+	.byte	23	; level 6
+	.byte	18	; level 7
+	.byte	13	; level 8
+	.byte	8	; level 9
+	.byte	6	; level 10
+	.byte	5	; level	11
+	.byte	5	; level	12
+	.byte	5	; level	13
+	.byte	4	; level 14
+	.byte	4	; level 15
+	.byte	4	; level 16
+	.byte	3	; level 17
+	.byte	3	; level 18
+	.byte	3	; level 19
+	.byte	3	; level 20
+
+GRAVITY_MAX_LEVEL = * - GravityFramesPerCellTable
+
 
 ENDMODULE
 
