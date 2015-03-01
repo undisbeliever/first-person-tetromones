@@ -60,6 +60,9 @@ _SkipResetDelay:
 .A8
 .I16
 ROUTINE Update
+	; repeat
+	; until JVJOY & HVJOY_AUTOJOY == 0
+	;
 	; currentFrame = JOY1
 	; held = JOY1 & previousFrame
 	; previousFrame = JOY1
@@ -70,6 +73,12 @@ ROUTINE Update
 	; _Update_DelayTestButton(JOY1_H, JOYH_DOWN, downCounter)
 	; _Update_DelayTestButton(JOY1_H, JOYH_LEFT, leftCounter)
 	; _Update_DelayTestButton(JOY1_H, JOYH_RIGHT, rightCounter)
+
+	; ::SHOULDDO UNTIL_BIT in structure::
+	LDA	#HVJOY_AUTOJOY
+_Update_loop:
+		BIT	HVJOY
+		BNE	_Update_loop
 
 	REP	#$20
 .A16

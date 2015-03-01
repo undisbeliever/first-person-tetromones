@@ -8,23 +8,31 @@
 .include "includes/synthetic.inc"
 .include "includes/registers.inc"
 .include "includes/structure.inc"
+.include "routines/metasprite.h"
 
 .include "resources.h"
 
-;; Game Center rotation point
-SCREEN_CENTER_X	= 512
-SCREEN_CENTER_Y	= 512
+;; Game Center
+MODE7_CENTERX	= 512
+MODE7_CENTERY	= 512
+
+SCREEN_WIDTH = 256
+SCREEN_HEIGHT = 224
 
 ;; The start of the screen column.
 DRAW_PIECE_COLUMN  = 3
-PLAYFIELD_ROW	   = 11
+;; The start of the screen row - 2 rows are used for padding for I piece.
+DRAW_PIECE_ROW     = 9
+
+CLEAR_LINES_COLUMN  = 3
+CLEAR_LINES_ROW    = 11
 
 ;; The tile that signifies a row for removal.
 HIGHLIGHTED_TILE   = 5
 
-;; Top left position of the game field.
-SCREEN_TOP_HOFS = 396 - 256 / 2
-SCREEN_TOP_VOFS = 435 - 224 / 2
+;; center position of the top left of the game field
+PIECE_000_XPOS = MODE7_CENTERX - N_ROWS / 2 * 8 - 16	; -16 is padding.
+PIECE_000_YPOS = MODE7_CENTERY - N_LINES / 2 * 8 - 8
 
 MODE7_TILE_WIDTH  = 128
 MODE7_TILE_HEIGHT = 128
@@ -38,8 +46,6 @@ SCREEN_TILE_WIDTH  = 32
 NUMBER_DIGIT_DELTA = 6
 NUMBER_DIGIT_SECOND_HALF_DELTA = 10
 
-CURRENT_PIECE_XPOS = 128 - 32 / 2 + 4
-CURRENT_PIECE_YPOS = 112 - 32 / 2 + 4 
 
 ; Locations of the digits
 DRAW_LEVEL_ROW      = 29

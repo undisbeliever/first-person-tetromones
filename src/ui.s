@@ -1,5 +1,6 @@
 
 .include "includes/registers.inc"
+.include "routines/metasprite.h"
 .include "routines/screen.h"
 .include "routines/block.h"
 .include "routines/reset-snes.h"
@@ -15,8 +16,8 @@ MODULE Ui
 	STRUCT 	oamBuffer, OamFormat, 4
 	BYTE	updateOamBufferOnZero
 
-	UINT16	mode7Hofs
-	UINT16	mode7Vofs
+	UINT16	mode7xPos
+	UINT16	mode7yPos
 	ADDR	mode7MatrixPtr
 
 	;; Index within RotationTable for current rotation alignment
@@ -29,6 +30,8 @@ MODULE Ui
 	BYTE	drawPieceRow
 	BYTE	drawPieceColumn
 	WORD	drawPieceTemp
+	BYTE	drawPieceXOffset
+	BYTE	drawPieceYOffset
 
 
 	SAME_VARIABLE	drawPieceTile, drawNumberPos
@@ -42,10 +45,10 @@ ROUTINE Init
 
 	JSR	SetupScreen
 
-	LDY	#SCREEN_TOP_HOFS + 8 * SHOW_BOARD_XPOS
-	STY	mode7Hofs
-	LDY	#SCREEN_TOP_VOFS + 8 * SHOW_BOARD_YPOS
-	STY	mode7Vofs
+	LDY	#PIECE_000_XPOS + 8 * SHOW_BOARD_XPOS + 8
+	STY	mode7xPos
+	LDY	#PIECE_000_YPOS + 8 * SHOW_BOARD_YPOS
+	STY	mode7yPos
 
 	LDX	#0
 	STX	rotationIndex
@@ -68,14 +71,30 @@ ROUTINE Init
 .A8
 .I16
 ROUTINE VBlank
-	LDA	mode7Hofs
+	LDA	mode7xPos
+	STA	M7X
+	LDA	mode7xPos + 1
+	STA	M7X
+
+	LDA	mode7yPos
+	STA	M7Y
+	LDA	mode7yPos + 1
+	STA	M7Y
+
+	SEC
+	LDA	mode7xPos
+	SBC	#SCREEN_WIDTH / 2
 	STA	M7HOFS
-	LDA	mode7Hofs + 1
+	LDA	mode7xPos + 1
+	SBC	#0
 	STA	M7HOFS
 
-	LDA	mode7Vofs
+	SEC
+	LDA	mode7yPos
+	SBC	#SCREEN_HEIGHT / 2 + 1		; ::BUGFIX off by 1 error::
 	STA	M7VOFS
-	LDA	mode7Vofs + 1
+	LDA	mode7yPos + 1
+	SBC	#0
 	STA	M7VOFS
 
 	; store mode 7 registers from RotateTable data
@@ -149,26 +168,31 @@ ROUTINE VBlank
 .A8
 .I16
 ROUTINE MoveGameField
-	; mode7Hofs = FPTetromones__xPos * 8 + SCREEN_TOP_HOFS
-	; mode7Vofs = FPTetromones__yPos * 8 + SCREEN_TOP_VOFS
+	; x = FPTetromones__currentPiece
+	; mode7Hofs = FPTetromones__xPos * 8 + PIECE_000_XPOS + x->xOffset
+	; mode7Vofs = FPTetromones__yPos * 8 + PIECE_000_YPOS + x->yOffset
 
 	REP	#$30
 .A16
+	LDX	FPTetromones__currentPiece
+
 	LDA	FPTetromones__xPos
 	AND	#$00FF
 	ASL
 	ASL
 	ASL
-	ADD	#SCREEN_TOP_HOFS
-	STA	mode7Hofs
+	ADD	#PIECE_000_XPOS
+	ADD	a:Piece::xOffset, X
+	STA	mode7xPos
 
 	LDA	FPTetromones__yPos
 	AND	#$00FF
 	ASL
 	ASL
 	ASL
-	ADD	#SCREEN_TOP_VOFS
-	STA	mode7Vofs
+	ADD	#PIECE_000_YPOS
+	ADD	a:Piece::yOffset, X
+	STA	mode7yPos
 
 	SEP	#$20
 .A8
@@ -296,7 +320,7 @@ ROUTINE CheckPieceCollision
 .A8
 .I16
 ROUTINE _CheckPieceCollision_CurrentPosition
-	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + DRAW_PIECE_ROW + FPTetromones__xPos
 	; _CheckPieceCollision(y, x);
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
@@ -314,6 +338,7 @@ ROUTINE _CheckPieceCollision_CurrentPosition
 
 	LDA	FPTetromones__xPos
 	AND	#$00FF
+	ADD	#DRAW_PIECE_ROW
 	ADD	drawPieceTemp
 	TAY
 
@@ -323,7 +348,7 @@ ROUTINE _CheckPieceCollision_CurrentPosition
 .A8
 .I16
 ROUTINE CheckPieceLeftCollision
-	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos - 1
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos + DRAW_PIECE_ROW - 1
 	; _CheckPieceCollision(y, FPTetromones__currentPiece);
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
@@ -342,6 +367,7 @@ ROUTINE CheckPieceLeftCollision
 	LDA	FPTetromones__xPos
 	AND	#$00FF
 	ADD	drawPieceTemp
+	ADD	#DRAW_PIECE_ROW
 	DEC
 	TAY
 
@@ -355,7 +381,7 @@ ROUTINE CheckPieceLeftCollision
 .A8
 .I16
 ROUTINE CheckPieceRightCollision
-	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos + 1
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos + DRAW_PIECE_ROW + 1
 	; _CheckPieceCollision(y, FPTetromones__currentPiece);
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
@@ -375,6 +401,7 @@ ROUTINE CheckPieceRightCollision
 	AND	#$00FF
 	SEC			; + 1
 	ADC	drawPieceTemp
+	ADD	#DRAW_PIECE_ROW
 	TAY
 
 	LDX	FPTetromones__currentPiece
@@ -385,7 +412,7 @@ ROUTINE CheckPieceRightCollision
 .A8
 .I16
 ROUTINE CheckPieceDropCollision
-	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos + 1) * SCREEN_TILE_WIDTH + FPTetromones__xPos
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos + 1) * SCREEN_TILE_WIDTH + FPTetromones__xPos + DRAW_PIECE_ROW
 	; _CheckPieceCollision(y, FPTetromones__currentPiece);
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
@@ -404,6 +431,7 @@ ROUTINE CheckPieceDropCollision
 	LDA	FPTetromones__xPos
 	AND	#$00FF
 	ADD	drawPieceTemp
+	ADD	#DRAW_PIECE_ROW
 	TAY
 
 	LDX	FPTetromones__currentPiece
@@ -479,15 +507,15 @@ ROUTINE _CheckPieceCollision
 .A8
 .I16
 ROUTINE HighlightLine
-	; x = (DRAW_PIECE_COLUMN + line) * SCREEN_TILE_WIDTH
+	; x = (CLEAR_LINES_COLUMN + line) * SCREEN_TILE_WIDTH
 	; for y = 0 to N_ROWS
-	;	screenBuffer[x + PLAYFIELD_ROW] = HIGHLIGHTED_TILE
+	;	screenBuffer[x + CLEAR_LINES_ROW] = HIGHLIGHTED_TILE
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
 	REP	#$20
 .A16
 	AND	#$00FF
-	ADD	#DRAW_PIECE_COLUMN
+	ADD	#CLEAR_LINES_COLUMN
 	ASL
 	ASL
 	ASL
@@ -497,7 +525,7 @@ ROUTINE HighlightLine
 
 	LDA	#HIGHLIGHTED_TILE | (HIGHLIGHTED_TILE <<8)
 	.repeat	N_ROWS / 2, i
-		STA	screenBuffer + i * 2 + PLAYFIELD_ROW, X
+		STA	screenBuffer + i * 2 + CLEAR_LINES_ROW, X
 	.endrepeat
 
 	SEP	#$20
@@ -513,17 +541,17 @@ ROUTINE HighlightLine
 .A8
 .I16
 ROUTINE RemoveLine
-	; x = (DRAW_PIECE_COLUMN + line) * SCREEN_TILE_WIDTH
+	; x = (CLEAR_LINES_COLUMN + line) * SCREEN_TILE_WIDTH
 	; repeat
-	;	memcpy(screenBuffer[x - SCREEN_TILE_WIDTH + PLAYFIELD_ROW], screenBuffer[x + PLAYFIELD_ROW], N_ROWS)
+	;	memcpy(screenBuffer[x - SCREEN_TILE_WIDTH + CLEAR_LINES_ROW], screenBuffer[x + DRAW_PIECE_ROW], N_ROWS)
 	;	x -= SCREEN_TILE_WIDTH
-	; UNTIL x < (DRAW_PIECE_COLUMN + 1) * SCREEN_TILE_WIDTH
+	; UNTIL x < (CLEAR_LINES_COLUMN + 1) * SCREEN_TILE_WIDTH
 
 	.assert SCREEN_TILE_WIDTH = 32, error, "Bad value"
 	REP	#$20
 .A16
 	AND	#$00FF
-	ADD	#DRAW_PIECE_COLUMN
+	ADD	#CLEAR_LINES_COLUMN
 	ASL
 	ASL
 	ASL
@@ -534,13 +562,13 @@ ROUTINE RemoveLine
 		TAX
 
 		.repeat	N_ROWS / 2, i
-			LDA	screenBuffer - SCREEN_TILE_WIDTH + i * 2 + PLAYFIELD_ROW, X
-			STA	screenBuffer + i * 2 + PLAYFIELD_ROW, X
+			LDA	screenBuffer - SCREEN_TILE_WIDTH + i * 2 + CLEAR_LINES_ROW, X
+			STA	screenBuffer + i * 2 + CLEAR_LINES_ROW, X
 		.endrepeat
 
 		TXA
 		SUB	#SCREEN_TILE_WIDTH
-		CMP	#(DRAW_PIECE_COLUMN + 1) * SCREEN_TILE_WIDTH
+		CMP	#(CLEAR_LINES_COLUMN + 1) * SCREEN_TILE_WIDTH
 	UNTIL_LT
 
 	SEP	#$20
@@ -576,13 +604,17 @@ ROUTINE HideCurrentPiece
 ROUTINE DrawCurrentPiece
 	; currentPiece = FPTetromones__currentPiece
 	; drawPieceTile = (currentPiece->tileColor - 1) << OAM_ATTR_PALETTE_SHIFT | (3 << OAM_ATTR_ORDER_SHIFT)
-	; x = 0
 	;
+	; yOffset = currentPiece->xOffset
+	; yOffset = currentPiece->xOffset
+	;
+	; x = 0
+	; y = 0
 	; for drawPieceRow = 0 to PIECE_HEIGHT
 	;	for drawPieceColumn = 0 to PIECE_WIDTH
 	;		if currentPiece->cells[x] != ' '
-	;			oamBuffer[y]::xPos = drawPieceColumn * 8 + CURRENT_PIECE_XPOS
-	;			oamBuffer[y]::yPos = drawPieceRow * 8 + CURRENT_PIECE_YPOS
+	;			oamBuffer[y]::xPos = drawPieceColumn * 8 + SCREEN_WIDTH / 2 - xOffset
+	;			oamBuffer[y]::yPos = drawPieceRow * 8 + SCREEN_HEIGHT / 2 - yOfffset
 	;			oamBuffer[y]::char = 0
 	;			oamBuffer[y]::attr = drawPieceTile
 	;
@@ -599,6 +631,11 @@ ROUTINE DrawCurrentPiece
 	ORA	#3 << OAM_ATTR_ORDER_SHIFT
 	STA	drawPieceTile
 
+	LDA	a:Piece::xOffset, X
+	STA	drawPieceXOffset
+	LDA	a:Piece::yOffset, X
+	STA	drawPieceYOffset
+
 	LDY	#0
 
 	STZ	drawPieceRow
@@ -613,13 +650,15 @@ ROUTINE DrawCurrentPiece
 				ASL
 				ASL
 				ASL
-				ADD	#CURRENT_PIECE_XPOS
+				ADD	#SCREEN_WIDTH / 2
+				SUB	drawPieceYOffset
 				STA	oamBuffer + OamFormat::xPos, Y
 				LDA	drawPieceRow
 				ASL
 				ASL
 				ASL
-				ADD	#CURRENT_PIECE_YPOS
+				ADD	#SCREEN_HEIGHT / 2
+				SUB	drawPieceXOffset
 				STA	oamBuffer + OamFormat::yPos, Y
 				LDA	#0
 				STA	oamBuffer + OamFormat::char, Y
@@ -656,7 +695,7 @@ ROUTINE DrawCurrentPieceOnField
 	; nextPiece = FPTetromones__currentPiece
 	; drawPieceTile = nextPiece->tileColor
 	; x = 0
-	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos
+	; y = (DRAW_PIECE_COLUMN + FPTetromones__yPos) * SCREEN_TILE_WIDTH + FPTetromones__xPos + DRAW_PIECE_ROW
 	;
 	; for drawPieceRow = PIECE_HEIGHT to 0
 	;	for drawPieceColumn = PIECE_WIDTH to 0
@@ -691,6 +730,7 @@ ROUTINE DrawCurrentPieceOnField
 	LDA	FPTetromones__xPos
 	AND	#$00FF
 	ADD	drawPieceTemp
+	ADD	#DRAW_PIECE_ROW
 	TAY
 
 	SEP	#$20
@@ -993,16 +1033,6 @@ ROUTINE SetupScreen
 	ClearVramLocation		0, MODE7_TILE_WIDTH * MODE7_TILE_HEIGHT * 2
 	TransferToVramLocationDataHigh	gameFieldTiles, 0
 	TransferToCgramLocation		gameFieldPalette, 0, 256
-
-	LDA	#.lobyte(SCREEN_CENTER_X)
-	STA	M7X
-	LDA	#.hibyte(SCREEN_CENTER_X)
-	STA	M7X
-	LDA	#.lobyte(SCREEN_CENTER_Y)
-	STA	M7Y
-	LDA	#.hibyte(SCREEN_CENTER_Y)
-	STA	M7Y
-
 
 	LDA	#TM_BG1 | TM_OBJ
 	STA	TM

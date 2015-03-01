@@ -26,10 +26,10 @@ LABEL Table
 	.addr	ZBlock_1
 	.addr	ZBlock_2
 	.addr	ZBlock_3
-	.addr	SquareLeft
-	.addr	SquareLeft
-	.addr	SquareRight
-	.addr	SquareRight
+	.addr	Square
+	.addr	Square
+	.addr	Square
+	.addr	Square
 	.addr	SBlock_0
 	.addr	SBlock_1
 	.addr	SBlock_2
@@ -57,6 +57,8 @@ TBlock_0:
 
 	.byte	1, 3, 0, 0
 
+	.word	12, 12
+
 	.byte	" *  "
 	.byte	"*** "
 	.byte	"    "
@@ -70,6 +72,8 @@ TBlock_1:
 	.byte	1
 
 	.byte	1, 2, 1, 0
+
+	.word	12, 12
 
 	.byte	" *  "
 	.byte	"**  "
@@ -85,6 +89,8 @@ TBlock_2:
 
 	.byte	0, 3, 1, 0
 
+	.word	12, 12
+
 	.byte	"    "
 	.byte	"*** "
 	.byte	" *  "
@@ -98,6 +104,8 @@ TBlock_3:
 	.byte	1
 
 	.byte	1, 2, 1, 0
+
+	.word	12, 12
 
 	.byte	" *  "
 	.byte	" ** "
@@ -115,6 +123,8 @@ JBlock_0:
 
 	.byte	1, 3, 0, 0
 
+	.word	12, 12
+
 	.byte	"*   "
 	.byte	"*** "
 	.byte	"    "
@@ -128,6 +138,8 @@ JBlock_1:
 	.byte	2
 
 	.byte	2, 1, 1, 0
+
+	.word	12, 12
 
 	.byte	" ** "
 	.byte	" *  "
@@ -143,6 +155,8 @@ JBlock_2:
 
 	.byte	0, 3, 1, 0
 
+	.word	12, 12
+
 	.byte	"    "
 	.byte	"*** "
 	.byte	"  * "
@@ -156,6 +170,8 @@ JBlock_3:
 	.byte	2
 
 	.byte	1, 1, 2, 0
+
+	.word	12, 12
 
 	.byte	" *  "
 	.byte	" *  "
@@ -173,6 +189,8 @@ ZBlock_0:
 
 	.byte	2, 2, 0, 0
 
+	.word	12, 12
+
 	.byte	"**  "
 	.byte	" ** "
 	.byte	"    "
@@ -186,6 +204,8 @@ ZBlock_1:
 	.byte	2
 
 	.byte	1, 2, 1, 0
+
+	.word	12, 12
 
 	.byte	"  * "
 	.byte	" ** "
@@ -201,6 +221,8 @@ ZBlock_2:
 
 	.byte	0, 2, 2, 0
 
+	.word	12, 12
+
 	.byte	"    "
 	.byte	"**  "
 	.byte	" ** "
@@ -215,6 +237,8 @@ ZBlock_3:
 
 	.byte	1, 2, 1, 0
 
+	.word	12, 12
+
 	.byte	" *  "
 	.byte	"**  "
 	.byte	"*   "
@@ -222,28 +246,16 @@ ZBlock_3:
 
 
 
-SquareLeft:
-	.addr	SquareLeft
-	.addr	SquareLeft
+Square:
+	.addr	Square
+	.addr	Square
 
 	.word	3 * 2
 	.byte	1
 
 	.byte	2, 2, 0, 0
 
-	.byte	"**  "
-	.byte	"**  "
-	.byte	"    "
-	.byte	"    "
-
-SquareRight:
-	.addr	SquareRight
-	.addr	SquareRight
-
-	.word	3 * 2
-	.byte	1
-
-	.byte	2, 2, 0, 0
+	.word	8, 8
 
 	.byte	" ** "
 	.byte	" ** "
@@ -261,6 +273,8 @@ SBlock_0:
 
 	.byte	2, 2, 0, 0
 
+	.word	12, 12
+
 	.byte	" ** "
 	.byte	"**  "
 	.byte	"    "
@@ -274,6 +288,8 @@ SBlock_1:
 	.byte	3
 
 	.byte	1, 2, 1, 0
+
+	.word	12, 12
 
 	.byte	" *  "
 	.byte	" ** "
@@ -289,6 +305,8 @@ SBlock_2:
 
 	.byte	0, 2, 2, 0
 
+	.word	12, 12
+
 	.byte	"    "
 	.byte	" ** "
 	.byte	"**  "
@@ -302,6 +320,8 @@ SBlock_3:
 	.byte	3
 
 	.byte	1, 2, 1, 0
+
+	.word	12, 12
 
 	.byte	"*   "
 	.byte	"**  "
@@ -319,6 +339,8 @@ LBlock_0:
 
 	.byte	1, 3, 0, 0
 
+	.word	12, 12
+
 	.byte	"  * "
 	.byte	"*** "
 	.byte	"    "
@@ -332,6 +354,8 @@ LBlock_1:
 	.byte	3
 
 	.byte	1, 1, 2, 0
+
+	.word	12, 12
 
 	.byte	" *  "
 	.byte	" *  "
@@ -347,6 +371,8 @@ LBlock_2:
 
 	.byte	0, 3, 1, 0
 
+	.word	12, 12
+
 	.byte	"    "
 	.byte	"*** "
 	.byte	"*   "
@@ -360,6 +386,8 @@ LBlock_3:
 	.byte	3
 
 	.byte	2, 1, 1, 0
+
+	.word	12, 12
 
 	.byte	"**  "
 	.byte	" *  "
@@ -377,6 +405,8 @@ IBlock_0:
 
 	.byte	0, 4, 0, 0
 
+	.word	16, 16
+
 	.byte	"    "
 	.byte	"****"
 	.byte	"    "
@@ -390,6 +420,8 @@ IBlock_1:
 	.byte	4
 
 	.byte	1, 1, 1, 1
+
+	.word	16, 16
 
 	.byte	"  * "
 	.byte	"  * "
@@ -405,6 +437,8 @@ IBlock_2:
 
 	.byte	0, 0, 4, 0
 
+	.word	16, 16
+
 	.byte	"    "
 	.byte	"    "
 	.byte	"****"
@@ -418,6 +452,8 @@ IBlock_3:
 	.byte	4
 
 	.byte	1, 1, 1, 1
+
+	.word	16, 16
 
 	.byte	" *  "
 	.byte	" *  "

@@ -85,9 +85,8 @@ ROUTINE	PlayGame
 
 	JSR	WaitForButtonPress
 
-	LDA	JOY1H
-	CMP	#JOYH_SELECT
-	IF_EQ
+	LDA	Controls__currentFrame + 1
+	IF_BIT	#JOYH_SELECT
 		JSR	TestRandomizer
 	ENDIF
 
@@ -569,6 +568,9 @@ ROUTINE GameOver
 .A8
 .I16
 ROUTINE TestRandomizer
+	; xPos = SHOW_BOARD_XPOS
+	; yPos = SHOW_BOARD_YPOS
+	;
 	; repeat
 	;	DetermineNextPiece()
 	;	statistics[nextPiece->statsIndex]++
@@ -584,6 +586,12 @@ ROUTINE TestRandomizer
 	;		Ui__RotateCw()
 	;	
 	;	Screen__WaitFrame()
+
+	LDA	#SHOW_BOARD_XPOS
+	STA	xPos
+
+	LDA	#SHOW_BOARD_YPOS
+	STA	yPos
 
 	REPEAT
 		JSR	DetermineNextPiece
