@@ -98,6 +98,14 @@ ROUTINE	PlayGame
 
 	JSR	GameLoop
 
+	; Press start to start new game.
+	REPEAT
+		LDA	Controls__currentFrame + 1
+		BIT	#JOYH_START
+	WHILE_ZERO
+		JSR	Screen__WaitFrame
+	WEND
+
 	JMP	Screen__FadeOut
 
 
@@ -641,7 +649,6 @@ ROUTINE GameOver
 
 	;; ::SOUND GAME OVER::
 
-	JSR	WaitForButtonPress
 	STZ	continuePlaying
 	RTS
 
