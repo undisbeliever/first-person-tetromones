@@ -135,6 +135,18 @@ ROUTINE GameLoop
 	;			xPos++;
 	;			Ui__MoveGameField()
 	;			PlaySound(SOUND_MOVE_RIGHT)
+	;
+	;	if Controls__pressed & JOY_ROTATE_CC
+	;		if Ui__CheckPieceRotateCcCollision() != true
+	;			PlaySound(SOUND_ROTATE_CC)
+	;			Ui__RotateCc()
+	;			currentPiece = currentPiece->rotateCcPtr
+	;	else if Controls__pressed & JOY_ROTATE_CW
+	;		if Ui__CheckPieceRotateCcCollision() != true
+	;			PlaySound(SOUND_ROTATE_CW)
+	;			Ui__RotateCw()
+	;			currentPiece = currentPiece->rotateCwPtr
+	;
 	; until continuePlaying == false
 	;
 
@@ -186,6 +198,39 @@ ROUTINE GameLoop
 				; ::SOUND move right::
 			ENDIF
 		ENDIF
+
+		REP	#$20
+.A16
+		LDA	Controls__pressed
+		IF_BIT	#JOY_ROTATE_CC
+			SEP	#$20
+.A8
+			JSR	Ui__CheckPieceRotateCcCollision
+			IF_C_CLEAR
+				; ::SOUND SOUND_ROTATE_CC::
+				JSR	Ui__RotateCc
+				
+				LDX	currentPiece
+				LDY	a:Piece::rotateCcPtr, X
+				STY	currentPiece
+			ENDIF
+.A16
+		ELSE_BIT #JOY_ROTATE_CW
+			SEP	#$20
+.A8
+			JSR	Ui__CheckPieceRotateCwCollision
+			IF_C_CLEAR
+				; ::SOUND SOUND_ROTATE_CW::
+				JSR	Ui__RotateCw
+				
+				LDX	currentPiece
+				LDY	a:Piece::rotateCwPtr, X
+				STY	currentPiece
+			ENDIF
+		ENDIF
+
+		SEP	#$20
+.A8
 
 		LDA	continuePlaying
 	UNTIL_ZERO

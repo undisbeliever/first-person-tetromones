@@ -18,6 +18,8 @@ MODULE Ui
 
 	UINT16	mode7xPos
 	UINT16	mode7yPos
+	UINT16	mode7hofs
+	UINT16	mode7vofs
 	ADDR	mode7MatrixPtr
 
 	;; Index within RotationTable for current rotation alignment
@@ -45,10 +47,15 @@ ROUTINE Init
 
 	JSR	SetupScreen
 
-	LDY	#PIECE_000_XPOS + 8 * SHOW_BOARD_XPOS + 8
+	LDY	#PIECE_XPOS + 8 * SHOW_BOARD_XPOS
 	STY	mode7xPos
-	LDY	#PIECE_000_YPOS + 8 * SHOW_BOARD_YPOS
+	LDY	#PIECE_YPOS + 8 * SHOW_BOARD_YPOS
 	STY	mode7yPos
+
+	LDY	#PIECE_XPOS - PIECE_000_HOFFSET + 8 * SHOW_BOARD_XPOS
+	STY	mode7hofs
+	LDY	#PIECE_YPOS - PIECE_000_VOFFSET + 8 * SHOW_BOARD_YPOS
+	STY	mode7vofs
 
 	LDX	#0
 	STX	rotationIndex
@@ -81,20 +88,14 @@ ROUTINE VBlank
 	LDA	mode7yPos + 1
 	STA	M7Y
 
-	SEC
-	LDA	mode7xPos
-	SBC	#SCREEN_WIDTH / 2
+	LDA	mode7hofs
 	STA	M7HOFS
-	LDA	mode7xPos + 1
-	SBC	#0
+	LDA	mode7hofs + 1
 	STA	M7HOFS
 
-	SEC
-	LDA	mode7yPos
-	SBC	#SCREEN_HEIGHT / 2 + 1		; ::BUGFIX off by 1 error::
+	LDA	mode7vofs
 	STA	M7VOFS
-	LDA	mode7yPos + 1
-	SBC	#0
+	LDA	mode7vofs + 1
 	STA	M7VOFS
 
 	; store mode 7 registers from RotateTable data
@@ -169,11 +170,16 @@ ROUTINE VBlank
 .I16
 ROUTINE MoveGameField
 	; x = FPTetromones__currentPiece
-	; mode7Hofs = FPTetromones__xPos * 8 + PIECE_000_XPOS + x->xOffset
-	; mode7Vofs = FPTetromones__yPos * 8 + PIECE_000_YPOS + x->yOffset
+	; mode7xPos = FPTetromones__xPos * 8 + PIECE_XPOS + x->xOffset
+	; mode7yPos = FPTetromones__yPos * 8 + PIECE_YPOS + x->yOffset
+	; MoveGameField_Table[rotationIndex]()
+	;
+	; mode7hofs = mode7xPos - HOffsetTable[rotationIndex]
+	; mode7vofs = mode7yPos - VOffsetTable[rotationIndex]
 
-	REP	#$30
+	REP	#$20
 .A16
+
 	LDX	FPTetromones__currentPiece
 
 	LDA	FPTetromones__xPos
@@ -181,7 +187,7 @@ ROUTINE MoveGameField
 	ASL
 	ASL
 	ASL
-	ADD	#PIECE_000_XPOS
+	ADD	#PIECE_XPOS 
 	ADD	a:Piece::xOffset, X
 	STA	mode7xPos
 
@@ -190,9 +196,19 @@ ROUTINE MoveGameField
 	ASL
 	ASL
 	ASL
-	ADD	#PIECE_000_YPOS
+	ADD	#PIECE_YPOS
 	ADD	a:Piece::yOffset, X
 	STA	mode7yPos
+
+	LDX	rotationIndex
+
+	LDA	mode7xPos
+	SUB	HOffsetTable, X
+	STA	mode7hofs
+
+	LDA	mode7yPos
+	SUB	VOffsetTable, X
+	STA	mode7vofs
 
 	SEP	#$20
 .A8
@@ -210,6 +226,8 @@ ROUTINE RotateCc
 	;	mode7MatrixPtr += 1 // actually 4 words = 8
 	;
 	; rotationIndex = (rotationIndex + 2) % (4 * 2)
+	;
+	; MoveGameField()
 
 	REP	#$20
 .A16
@@ -235,10 +253,7 @@ ROUTINE RotateCc
 	AND	#$07
 	STA	rotationIndex
 
-	SEP	#$20
-.A8
-
-	RTS
+	JMP	MoveGameField
 
 
 
@@ -251,6 +266,8 @@ ROUTINE RotateCw
 	; for drawPieceTemp = N_ROTATION_FRAMES - 1 to 0
 	;	Screen__WaitFrame()
 	;	mode7MatrixPtr -= 1 // actually 4 words = 8
+	;
+	; MoveGameField()
 
 	REP	#$20
 .A16
@@ -278,10 +295,7 @@ ROUTINE RotateCw
 		DEC	drawPieceTemp
 	UNTIL_ZERO
 
-	SEP	#$20
-.A8
-
-	RTS
+	JMP	MoveGameField
 
 
 .A8
@@ -603,6 +617,9 @@ ROUTINE HideCurrentPiece
 .I16
 ROUTINE DrawCurrentPiece
 	; currentPiece = FPTetromones__currentPiece
+	; for i = 0 to rotationIndex / 2
+	;	currentPiece = currentPiece->rotateCwPtr
+	;
 	; drawPieceTile = (currentPiece->tileColor - 1) << OAM_ATTR_PALETTE_SHIFT | (3 << OAM_ATTR_ORDER_SHIFT)
 	;
 	; yOffset = currentPiece->xOffset
@@ -624,6 +641,18 @@ ROUTINE DrawCurrentPiece
 	; updateOamBufferOnZero = 0
 
 	LDX	FPTetromones__currentPiece
+
+	; rotate piece so it matches screen.
+	LDA	rotationIndex
+	LSR
+	IF_NOT_ZERO
+		REPEAT
+			LDY	a:Piece::rotateCwPtr, X
+			TYX
+
+			DEC
+		UNTIL_ZERO
+	ENDIF
 
 	LDA	a:Piece::tileColor, X
 	DEC
@@ -1041,6 +1070,20 @@ ROUTINE SetupScreen
 
 
 .rodata
+LABEL HOffsetTable
+	.word	PIECE_000_HOFFSET
+	.word	PIECE_090_HOFFSET
+	.word	PIECE_180_HOFFSET
+	.word	PIECE_270_HOFFSET
+
+
+LABEL VOffsetTable
+	.word	PIECE_000_VOFFSET
+	.word	PIECE_090_VOFFSET
+	.word	PIECE_180_VOFFSET
+	.word	PIECE_270_VOFFSET
+
+
 LABEL UiInitialBuffer
 	.repeat	SCREEN_TILE_HEIGHT, h
 		.incbin "resources/game-field.mp7", (SCREEN_UI_ROW + h) * MODE7_TILE_WIDTH + SCREEN_UI_COLUMN, SCREEN_TILE_WIDTH

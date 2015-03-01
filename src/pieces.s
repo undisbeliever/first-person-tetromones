@@ -76,7 +76,7 @@ TBlock_1:
 	.word	12, 12
 
 	.byte	" *  "
-	.byte	"**  "
+	.byte	" ** "
 	.byte	" *  "
 	.byte	"    "
 
@@ -108,7 +108,7 @@ TBlock_3:
 	.word	12, 12
 
 	.byte	" *  "
-	.byte	" ** "
+	.byte	"**  "
 	.byte	" *  "
 	.byte	"    "
 

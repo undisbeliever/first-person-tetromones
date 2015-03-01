@@ -22,7 +22,7 @@ PAL_FPS = 50
 STARTING_XPOS = 5
 STARTING_YPOS = 0
 
-SHOW_BOARD_XPOS = 5
+SHOW_BOARD_XPOS = 6
 SHOW_BOARD_YPOS = 11
 
 ;; Number of frames to wait when dropping a line
