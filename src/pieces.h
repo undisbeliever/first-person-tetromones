@@ -47,6 +47,15 @@ IMPORT_MODULE Pieces
 
 	;; The number of pieces in the table.
 	LABEL	COUNT
+
+	;; The Square Piece - used for square fix hack.
+	LABEL	Square
+
+	;; Per rotation offsets for the square piece
+	;; Used to fix the positioning
+	;; This way is not the cleanest but it works.
+	LABEL	SquarePieceXOffset
+	LABEL	SquarePieceYOffset
 ENDMODULE
 
 .endif ; ::_PIECES_H_

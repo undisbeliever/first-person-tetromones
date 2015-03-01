@@ -13,6 +13,20 @@ MODULE Pieces
 
 .rodata
 
+
+LABEL SquarePieceXOffset
+	.word	.loword(0)
+	.word	.loword(8)
+	.word	.loword(16)
+	.word	.loword(8)
+
+LABEL SquarePieceYOffset
+	.word	.loword(0)
+	.word	.loword(-8)
+	.word	.loword(0)
+	.word	.loword(8)
+
+
 LABEL Table
 	.addr	TBlock_0
 	.addr	TBlock_1
@@ -246,7 +260,7 @@ ZBlock_3:
 
 
 
-Square:
+LABEL Square
 	.addr	Square
 	.addr	Square
 

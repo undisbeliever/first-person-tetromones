@@ -172,7 +172,10 @@ ROUTINE MoveGameField
 	; x = FPTetromones__currentPiece
 	; mode7xPos = FPTetromones__xPos * 8 + PIECE_XPOS + x->xOffset
 	; mode7yPos = FPTetromones__yPos * 8 + PIECE_YPOS + x->yOffset
-	; MoveGameField_Table[rotationIndex]()
+	;
+	; if x == Pieces__Square
+	;	mode7xPos += SquarePieceXOffset[rotationIndex]
+	;	mode7yPos += SquarePieceYOffset[rotationIndex]
 	;
 	; mode7hofs = mode7xPos - HOffsetTable[rotationIndex]
 	; mode7vofs = mode7yPos - VOffsetTable[rotationIndex]
@@ -199,6 +202,23 @@ ROUTINE MoveGameField
 	ADD	#PIECE_YPOS
 	ADD	a:Piece::yOffset, X
 	STA	mode7yPos
+
+	; ::HACK fix the square position:: 
+	; Could not find a proper way to solve the positioning
+	; problem of the square piece.
+
+	CPX	#.loword(Pieces__Square)
+	IF_EQ
+		LDX	rotationIndex
+
+		LDA	mode7xPos
+		ADD	Pieces__SquarePieceXOffset, X
+		STA	mode7xPos
+
+		LDA	mode7yPos
+		ADD	Pieces__SquarePieceYOffset, X
+		STA	mode7yPos
+	ENDIF
 
 	LDX	rotationIndex
 
