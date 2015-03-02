@@ -72,7 +72,7 @@ ROUTINE	PlayGame
 	LDA	#1
 	STA	level
 
-	LDY	#10
+	LDY	#LINES_PER_LEVEL
 	STY	linesToNextLevel
 
 	LDA	#1
@@ -90,7 +90,7 @@ ROUTINE	PlayGame
 
 	LDA	Controls__currentFrame + 1
 	IF_BIT	#JOYH_SELECT
-		JSR	TestRandomizer
+		JSR	DebugTests
 	ENDIF
 
 	JSR	DetermineNextPiece
@@ -371,7 +371,7 @@ ROUTINE ProcessCompletedLines
 	; score += level * ScorePerLinesCleared[nCompletedLines - 1]
 	;
 	; if nLines >= linesToNextLevel
-	;	linesToNextLevel += 10
+	;	linesToNextLevel += LINES_PER_LEVEL
 	;	level++
 	;	Ui__DrawLevel()
 	;	playSound(SOUND_NEW_LEVEL)
@@ -380,7 +380,7 @@ ROUTINE ProcessCompletedLines
 	; UpdateScore()
 	;
 	; RemoveCompletedLinesAnimation()
-	; //::TODO set screen color::
+	; UpdatePaletteForLevel()
 
 	LDA	nCompletedLines
 	CMP	#4
@@ -423,7 +423,7 @@ ROUTINE ProcessCompletedLines
 	CMP	linesToNextLevel
 	IF_GE
 		LDA	linesToNextLevel
-		ADD	#10
+		ADD	#LINES_PER_LEVEL
 		STA	linesToNextLevel
 
 		SEP	#$20
@@ -439,7 +439,8 @@ ROUTINE ProcessCompletedLines
 
 	JSR	RemoveCompletedLinesAnimation
 
-	; ::TODO set piece colors::
+	; Set level color after the animation, not before.
+	JSR	Ui__UpdatePaletteForLevel
 
 	RTS
 
@@ -654,10 +655,13 @@ ROUTINE GameOver
 
 
 
-;; Tests the randomizer code by 
+;; Tests the difficult to test code.
+;; 	* tests the randomizer by constantly calling it.
+;;	* rotates the screen if rotation buttons are pressed
+;;	* increases the level count if start or select pressed
 .A8
 .I16
-ROUTINE TestRandomizer
+ROUTINE DebugTests
 	; xPos = SHOW_BOARD_XPOS
 	; yPos = SHOW_BOARD_YPOS
 	;
@@ -674,6 +678,11 @@ ROUTINE TestRandomizer
 	;		Ui__RotateCc()
 	;	elseif Controls__currentFrame & JOY_ROTATE_CW
 	;		Ui__RotateCw()
+	;
+	;	if Controls__pressed & (JOY_START | JOY_SELECT)
+	;		level++
+	;		Ui__DrawLevelNumber()
+	;		Ui__UpdatePaletteForLevel()
 	;	
 	;	Screen__WaitFrame()
 
@@ -719,6 +728,13 @@ ROUTINE TestRandomizer
 
 		SEP	#$20
 .A8
+
+		LDA	Controls__pressed + 1
+		IF_BIT	#JOYH_START | JOYH_SELECT
+			INC	level
+			JSR	Ui__DrawLevelNumber
+			JSR	Ui__UpdatePaletteForLevel
+		ENDIF
 
 		JSR	Screen__WaitFrame
 	FOREVER

@@ -1,5 +1,5 @@
 
-TABLES = rotations.inc
+TABLES = rotations.inc level-colors.inc
 
 .PHONY: ALL
 

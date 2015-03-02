@@ -81,6 +81,11 @@ DRAW_NLINES_ROW     = 20
 DRAW_NLINES_COLUMN  =  1
 
 
+;; Number of colors per piece tile
+N_TILE_COLORS = 5
+;; Number of different piece tiles
+N_PIECE_TILES = 5
+
 ;; VRAM Map
 ;; WORD ADDRESSES
 GAME_MODE	= BGMODE_MODE7
@@ -206,6 +211,11 @@ IMPORT_MODULE Ui
 
 	;; Draws the Score to the screen
 	ROUTINE DrawScore
+
+	;; Sets the piece palette to corrospond with the level number
+	;; REQUIRE: 8 bit A, 16 bit Index
+	;; @see `table/level-colors.inc` for color data.
+	ROUTINE UpdatePaletteForLevel
 
 ENDMODULE
 

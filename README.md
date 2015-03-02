@@ -17,4 +17,5 @@ Requirements
  * ca65
  * pcx2snes
  * gnu Make
+ * python3
 

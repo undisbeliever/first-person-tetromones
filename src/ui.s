@@ -16,6 +16,9 @@ MODULE Ui
 	STRUCT 	oamBuffer, OamFormat, 4
 	BYTE	updateOamBufferOnZero
 
+	WORD	paletteBuffer, 256
+	BYTE	updatePaletteOnZero
+
 	UINT16	mode7xPos
 	UINT16	mode7yPos
 	UINT16	mode7hofs
@@ -69,6 +72,7 @@ ROUTINE Init
 	JSR	DrawHiScore
 	JSR	DrawNLines
 	JSR	DrawScore
+	JSR	UpdatePaletteForLevel
 
 	STZ	updateBufferOnZero
 
@@ -108,6 +112,12 @@ ROUTINE VBlank
 		LDA	a:i * 2 + 1, X
 		STA	M7A + i
 	.endrepeat
+
+	LDA	updatePaletteOnZero
+	IF_ZERO
+		TransferToCgramLocation paletteBuffer, 0
+		STA	updatePaletteOnZero
+	ENDIF
 
 	LDA	updateOamBufferOnZero
 	IF_ZERO
@@ -1054,6 +1064,48 @@ ROUTINE _DrawNumber_6_U32XY
 	RTS
 
 
+;; Sets the palette of the screen
+.A8
+.I16
+ROUTINE	UpdatePaletteForLevel
+	; x = LevelPaletteTable[(FPTetromones__level - 1) % N_LEVEL_PALETTES]
+	;
+	; for tile = 0 to N_PIECE_TILES
+	;	for color = 0 to N_TILE_COLORS
+	;		paletteBuffer[tile * N_TILE_COLORS + color + 1] = x[tile * N_TILE_COLORS + color]
+	;		paletteBuffer[128 + tile * 16 + color + 1] = x[tile * N_TILE_COLORS + color]
+
+	LDY	FPTetromones__level
+	DEY
+	LDA	#N_LEVEL_PALETTES
+	JSR	Math__Divide_U16Y_U8A
+
+	REP	#$20
+.A16
+
+	TXA
+	ASL
+	TAY
+
+	LDX	LevelPaletteTable, Y
+
+	.repeat N_PIECE_TILES, tile
+		.repeat N_TILE_COLORS, color
+			LDA	a:2 * (tile * N_TILE_COLORS + color), X
+			STA	a:paletteBuffer + (tile * N_TILE_COLORS + color + 1) * 2
+			STA	a:paletteBuffer + (128 + tile * 16 + color + 1) * 2
+		.endrepeat
+	.endrepeat
+
+	SEP	#$20
+.A8
+
+	STZ	updatePaletteOnZero
+
+	RTS
+	
+
+
 ;; Sets up the Screen Registers and loads tiles, maps and palette to PPU
 .A8
 .I16
@@ -1075,13 +1127,12 @@ ROUTINE SetupScreen
 	STZ	OAMDATA
 
 	TransferToVramLocation		gameObjectsTiles, GAME_OAM_TILES
-	.repeat 5, i
-		TransferToCgramLocation		gameFieldPalette + 2 + 5 * 2 * i, 129 + 16 * i, 5 * 2
-	.endrepeat
 
 	ClearVramLocation		0, MODE7_TILE_WIDTH * MODE7_TILE_HEIGHT * 2
 	TransferToVramLocationDataHigh	gameFieldTiles, 0
-	TransferToCgramLocation		gameFieldPalette, 0, 256
+	MemCopy				gameFieldPalette, paletteBuffer, 256
+
+	STZ	updatePaletteOnZero
 
 	LDA	#TM_BG1 | TM_OBJ
 	STA	TM
@@ -1111,6 +1162,8 @@ LABEL UiInitialBuffer
 UiInitialBuffer_End:
 
 	.include "tables/rotations.inc"
+
+	.include "tables/level-colors.inc"
 
 ENDMODULE
 
