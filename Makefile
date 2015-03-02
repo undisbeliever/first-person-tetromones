@@ -2,7 +2,7 @@
 BINARY      = bin/First_Person_Tetromones.sfc
 API_MODULES = reset-snes block screen math random
 API_DIR     = snesdev-common
-CONFIG      = LOROM_1MBit
+CONFIG      = LOROM_1MBit_copyright
 
 SOURCES     = $(wildcard src/*.s)
 OBJECTS     = $(patsubst src/%.s,obj/%.o,$(SOURCES))
