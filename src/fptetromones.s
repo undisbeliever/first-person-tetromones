@@ -82,7 +82,6 @@ ROUTINE	PlayGame
 	STX	rotationsControls
 
 	JSR	Ui__Init
-	JSR	DetermineNextPiece	;; ::BUGFIX required for SNES9x::
 
 	JSR	Screen__FadeIn
 
