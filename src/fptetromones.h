@@ -28,6 +28,9 @@ SHOW_BOARD_YPOS = 11
 ;; Number of frames to wait when dropping a line
 LINE_REMOVE_DELAY = 12
 
+;; Number of frames to wait when pressing a button.
+PLACE_PIECE_DELAY = 12
+
 N_PIECES  = 7
 N_ROWS	  = 10
 N_LINES   = 20
@@ -35,7 +38,6 @@ N_LINES   = 20
 LINES_PER_LEVEL  = 10
 DEFAULT_HI_SCORE = 10000
 
-INSTANT_DROP_DELAY = 12
 FAST_DROP_SPEED = 20
 
 IMPORT_MODULE FPTetromones

@@ -46,6 +46,10 @@ GameVariables:
 	;; If non-zero then use cannot hold.
 	BYTE	canHoldPieceOnZero
 
+	;; If zero then the next spawned piece is 0
+	;; This field may be set by WaitManyFramesForSpawnDelay
+	BYTE	nextPieceIsHoldPieceOnZero
+
 	ADDR	nextPiece
 	ADDR	currentPiece
 	ADDR	holdPiece
@@ -82,6 +86,7 @@ ROUTINE	PlayGame
 
 	LDA	#1
 	STA	continuePlaying
+	STA	nextPieceIsHoldPieceOnZero
 
 	LDX	#.loword(Controls__InitialRotationMoveControls)
 	STX	rotationsControls
@@ -98,7 +103,7 @@ ROUTINE	PlayGame
 	ENDIF
 
 	JSR	DetermineNextPiece
-	JSR	NewPiece
+	JSR	SpawnPiece
 
 	JSR	GameLoop
 
@@ -288,7 +293,7 @@ ROUTINE GameLoop
 
 
 
-;; Holds the current piece
+;; Processes the hold piece button.
 .A8
 .I16
 ROUTINE	HoldPiecePressed
@@ -298,7 +303,7 @@ ROUTINE	HoldPiecePressed
 	;		canHoldPieceOnZero = 1
 	;
 	;		Ui__DrawHoldPiece()
-	;		NewPiece()
+	;		SpawnPiece()
 	;	else
 	;		tmp = currentPiece
 	;		currentPiece = holdPiece
@@ -324,7 +329,8 @@ ROUTINE	HoldPiecePressed
 
 			JSR	Ui__DrawHoldPiece
 
-			JMP	NewPiece
+			JMP	SpawnPiece
+
 		ELSE
 			LDY	currentPiece
 			STX	currentPiece
@@ -359,7 +365,6 @@ ROUTINE InstantDrop
 	;	fastDropDistance++
 	; 
 	; Ui__MoveGameField()
-	; WaitManyFrames(INSTANT_DROP_DELAY)
 	; PlacePiece()
 
 	REPEAT
@@ -370,9 +375,6 @@ ROUTINE InstantDrop
 	WEND
 
 	JSR	Ui__MoveGameField
-
-	LDA	#INSTANT_DROP_DELAY
-	JSR	WaitManyFrames
 
 	.assert * = PlacePiece, lderror, "Bad Flow"
 
@@ -385,7 +387,12 @@ ROUTINE InstantDrop
 ROUTINE PlacePiece
 	; canHoldPieceOnZero = 0
 	;
+	; Ui__HideCurrentPiece()
 	; Ui__DrawCurrentPieceOnField()
+	; Ui__MoveGameField()
+	;
+	; WaitManyFramesForSpawnDelay(PLACE_PIECE_DELAY)
+	;
 	; nCompletedLines = AddToLineCounter()
 	;
 	; if fastDropDistance > 0
@@ -399,11 +406,16 @@ ROUTINE PlacePiece
 	; else
 	;	playSound(DROP_PIECE_SOUND)
 	;
-	; NewPiece()
+	; SpawnPiece()
 
 	STZ	canHoldPieceOnZero
 
+	JSR	Ui__HideCurrentPiece
 	JSR	Ui__DrawCurrentPieceOnField
+	JSR	Ui__MoveGameField
+
+	LDA	#PLACE_PIECE_DELAY
+	JSR	WaitManyFramesForSpawnDelay
 
 	REP	#$21	; Clear carry
 .A16
@@ -433,7 +445,7 @@ ROUTINE PlacePiece
 		;; ::SOUND DROP_PIECE_SOUND ::
 	ENDIF	
 
-	JMP	NewPiece
+	JMP	SpawnPiece
 
 
 
@@ -565,26 +577,24 @@ ROUTINE ProcessCompletedLines
 .A8
 .I16
 ROUTINE RemoveCompletedLinesAnimation
-	; Ui__HideCurrentPiece()
 	; HighlightCompletedLines()
 	;
-	; WaitManyFrames()
+	; WaitManyFramesForSpawnDelay(LINE_REMOVE_DELAY)
 	;
 	; // Removes Completed Lines
 	; for x = 0 to .sizeof(cellsPerLine)
 	;	if cellsPerLine[x] >= N_ROWS
 	;		Ui__RemoveLine(x)
-	;		WaitManyFrames()
+	;		WaitManyFramesForSpawnDelay(LINE_REMOVE_DELAY)
 	;
 	;		for y = X to 1
 	;			cellsPerLine[y] = cellsPerLine[y - 1]
 
-	JSR	Ui__HideCurrentPiece
 	JSR	HighlightCompletedLines
 
 	;; ::SHOULDDO an actual remove lines animation instead of hide::
 	LDA	#LINE_REMOVE_DELAY
-	JSR	WaitManyFrames
+	JSR	WaitManyFramesForSpawnDelay
 
 	FOR_X	#0, INC, #.sizeof(cellsPerLine)
 		LDA	cellsPerLine, X
@@ -595,7 +605,7 @@ ROUTINE RemoveCompletedLinesAnimation
 				JSR	Ui__RemoveLine
 
 				LDA	#LINE_REMOVE_DELAY
-				JSR	WaitManyFrames
+				JSR	WaitManyFramesForSpawnDelay
 			PLX
 			TXY
 
@@ -634,13 +644,28 @@ ROUTINE HighlightCompletedLines
 
 
 
-;; Load New Piece from nextPiece
+;; Spawn a Piece from nextPiece or holdPiece depending on `nextPieceIsHoldPieceOnZero` flag. 
 .A8
 .I16
-ROUTINE NewPiece
-	; currentPiece = nextPiece
+ROUTINE SpawnPiece
+	; if nextPieceIsHoldPieceOnZero == 0
+	;	if holdPiece != 0
+	;		currentPiece = holdPiece
+	;		holdPiece = 0
+	;
+	;		Ui__RemoveHoldPiece() 
+	;	else
+	;		currentPiece = nextPiece
+	;		DetermineNextPiece()
+	;
+	;	nextPieceIsHoldPieceOnZero = 1
+	;
+	; else
+	; 	currentPiece = nextPiece
+	;	DetermineNextPiece()
+	;
 	; xPos = STARTING_XPOS
-	; yPos = 0
+	; yPos = STARTING_YPOS
 	;
 	; Ui__MoveGameField()
 	; Ui__DrawCurrentPiece()
@@ -652,13 +677,37 @@ ROUTINE NewPiece
 	; 	statistics[currentPiece->statsIndex]++
 	;
 	; 	Ui__DrawStatistics()
-	;	DetermineNextPiece()
 
-	LDY	nextPiece
-	STY	currentPiece
+
+	LDA	nextPieceIsHoldPieceOnZero
+	IF_ZERO
+		LDX	holdPiece
+		IF_NOT_ZERO
+			STX	currentPiece
+
+			LDX	#0
+			STX	holdPiece
+
+			JSR	Ui__RemoveHoldPiece
+		ELSE
+			LDX	nextPiece
+			STX	currentPiece
+
+			JSR	DetermineNextPiece
+		ENDIF
+
+		LDA	#1
+		STA	nextPieceIsHoldPieceOnZero
+	ELSE
+		LDX	nextPiece
+		STX	currentPiece
+
+		JSR	DetermineNextPiece
+	ENDIF
 
 	LDA	#STARTING_XPOS
 	STA	xPos
+	.assert STARTING_YPOS = 0, error, "Bad Value"
 	STZ	yPos
 
 	JSR	Ui__MoveGameField
@@ -673,7 +722,7 @@ ROUTINE NewPiece
 		INC16	statistics, X
 		JSR	Ui__DrawStatistics
 
-	.assert * = DetermineNextPiece, lderror, "Bad Flow"
+		RTS
 
 
 
@@ -880,17 +929,32 @@ ROUTINE WaitForButtonPress
 
 
 
-;; Waits many frames
+;; Waits many frames for the spawn delay/line removal delay
+;; Will set nextPieceIsHoldPieceOnZero to 0 if `JOY_HOLD_PIECE` is set.
+;;
 ;; INPUT: A - number of frames to wait
 .A8
 .I16
-ROUTINE WaitManyFrames
+ROUTINE WaitManyFramesForSpawnDelay
 	; for dropDelay = A to 0
+	;	if Controls__pressed & JOY_HOLD_PIECE
+	;		nextPieceIsHoldPieceOnZero = 0
 	;	Screen__WaitFrame()
 
 	STA	dropDelay
 	REPEAT
+		REP	#$20
+.A16
+		LDA	Controls__pressed
+		AND	#JOY_HOLD_PIECE
+		SEP	#$20
+.A8
+		IF_NOT_ZERO
+			STZ	nextPieceIsHoldPieceOnZero
+		ENDIF
+
 		JSR	Screen__WaitFrame
+
 		DEC	dropDelay
 	UNTIL_ZERO
 

@@ -223,6 +223,10 @@ IMPORT_MODULE Ui
 	;; Draws the Score to the screen
 	ROUTINE DrawScore
 
+	;; Removes the hold piece shown in the hold section
+	;; REQUIRE: 8 bit A, 16 bit Index
+	ROUTINE RemoveHoldPiece
+
 	;; Sets the piece palette to corrospond with the level number
 	;; REQUIRE: 8 bit A, 16 bit Index
 	;; @see `table/level-colors.inc` for color data.

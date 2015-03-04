@@ -766,7 +766,7 @@ ROUTINE DrawCurrentPieceOnField
 	;	y += SCREEN_TILE_WIDTH - PIECE_WIDTH
 	; until y >= (DRAW_NEXT_COLUMN + PIECE_HEIGHT) * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
 	;
-	; updateOamBufferOnZero = 0
+	; updateBufferOnZero = 0
 
 	LDX	FPTetromones__currentPiece
 
@@ -1088,6 +1088,50 @@ ROUTINE _DrawNumber_6_U32XY
 	STZ	updateBufferOnZero
 
 	RTS
+
+
+.A8
+.I16
+ROUTINE RemoveHoldPiece
+	; x = DRAW_HOLD_COLUMN * SCREEN_TILE_WIDTH + DRAW_HOLD_ROW
+	;
+	; for drawPieceRow = PIECE_HEIGHT to 0
+	;	for c = PIECE_WIDTH to 0
+	;		screenBuffer[x + c] = 0
+	;
+	;	x += SCREEN_TILE_WIDTH
+	;
+	; updateBufferOnZero = 0
+
+	LDX	#DRAW_HOLD_COLUMN * SCREEN_TILE_WIDTH + DRAW_HOLD_ROW
+
+	REP	#$30
+.A16
+
+	LDA	#PIECE_HEIGHT
+	STA	drawPieceRow
+
+	REPEAT
+		.assert PIECE_HEIGHT .mod 4 = 0, error, "Bad Value"
+
+		.repeat	PIECE_WIDTH / 2, c
+			STZ	screenBuffer + c * 2, X
+		.endrepeat
+
+		TXA
+		ADD	#SCREEN_TILE_WIDTH
+		TAX
+
+		DEC	drawPieceRow
+	UNTIL_ZERO
+
+	SEP	#$20
+.A8
+
+	STZ	updateBufferOnZero
+
+	RTS
+
 
 
 ;; Sets the palette of the screen
