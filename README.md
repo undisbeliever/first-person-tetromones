@@ -44,4 +44,5 @@ Build Requirements
  * pcx2snes
  * gnu Make
  * python3
+ * ucon64
 
