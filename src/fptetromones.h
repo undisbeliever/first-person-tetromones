@@ -49,6 +49,7 @@ IMPORT_MODULE FPTetromones
 
 	ADDR	nextPiece
 	ADDR	currentPiece
+	ADDR	holdPiece
 
 	;; X Position of current piece relative to screenBuffer left in tiles
 	BYTE	xPos

@@ -13,6 +13,7 @@ Controls
  * *B* *R* - Rotate clockwise
  * *Y* *L* - Rotate counter-clockwise
  * *A* - Insant drop
+ * *X* - Hold Piece
 
 
 Debug Testing Mode

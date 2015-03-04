@@ -42,8 +42,13 @@ GameVariables:
 	;; If zero, then the game is over.
 	BYTE	continuePlaying
 
+	;; If zero then hold piece is enabled,
+	;; If non-zero then use cannot hold.
+	BYTE	canHoldPieceOnZero
+
 	ADDR	nextPiece
 	ADDR	currentPiece
+	ADDR	holdPiece
 
 	BYTE	xPos
 	BYTE	yPos
@@ -152,6 +157,9 @@ ROUTINE GameLoop
 	;	if Controls__pressed & JOY_INSTANT_DROP
 	;			InstantDrop()
 	;
+	;	else if Controls__pressed & JOY_HOLD
+	;			HoldPiecePressed()
+	;
 	;	else if Controls__pressed & JOY_ROTATE_CC
 	;		if Ui__CheckPieceRotateCcCollision() != true
 	;			PlaySound(SOUND_ROTATE_CC)
@@ -223,11 +231,18 @@ ROUTINE GameLoop
 		REP	#$20
 .A16
 		LDA	Controls__pressed
-		IF_BIT #JOY_INSTANT_DROP
+		IF_BIT	#JOY_HOLD_PIECE
 .A16
 			SEP	#$20
+.A8
+			JSR	HoldPiecePressed
+.A16
+		ELSE_BIT #JOY_INSTANT_DROP
+.A16
+			SEP	#$20
+.A8
 			JSR	InstantDrop
-
+.A16
 		ELSE_BIT #JOY_ROTATE_CC
 			SEP	#$20
 .A8
@@ -273,6 +288,66 @@ ROUTINE GameLoop
 
 
 
+;; Holds the current piece
+.A8
+.I16
+ROUTINE	HoldPiecePressed
+	; if canHoldPieceOnZero == 0
+	;	if holdPiece == 0
+	;		holdPiece = currentPiece
+	;		canHoldPieceOnZero = 1
+	;
+	;		Ui__DrawHoldPiece()
+	;		NewPiece()
+	;	else
+	;		tmp = currentPiece
+	;		currentPiece = holdPiece
+	;		holdPiece = tmp
+	;
+	;		canHoldPieceOnZero = 1
+	;
+	;		xPos = STARTING_XPOS
+	;		yPos = STARTING_XPOS
+	;
+	;		Ui__DrawHoldPiece()
+	;		Ui__MoveGameField()
+	;		Ui__DrawCurrentPiece()
+
+	LDA	canHoldPieceOnZero
+	IF_ZERO
+		LDX	holdPiece
+		IF_ZERO
+			LDX	currentPiece
+			STX	holdPiece
+
+			INC	canHoldPieceOnZero
+
+			JSR	Ui__DrawHoldPiece
+
+			JMP	NewPiece
+		ELSE
+			LDY	currentPiece
+			STX	currentPiece
+			STY	holdPiece
+
+			LDA	#STARTING_XPOS
+			STA	xPos
+
+			.assert STARTING_XPOS <> 0, error, "Bad Value"
+			STA	canHoldPieceOnZero
+
+			LDA	#STARTING_YPOS
+			STA	yPos
+
+			JSR	Ui__DrawHoldPiece
+			JSR	Ui__MoveGameField
+			JMP	Ui__DrawCurrentPiece
+		ENDIF
+	ENDIF
+
+	RTS
+
+
 ;; Instantly drops the piece and waits INSTANT_DROP_DELAY frames.
 .A8
 .I16
@@ -308,6 +383,8 @@ ROUTINE InstantDrop
 .A8
 .I16
 ROUTINE PlacePiece
+	; canHoldPieceOnZero = 0
+	;
 	; Ui__DrawCurrentPieceOnField()
 	; nCompletedLines = AddToLineCounter()
 	;
@@ -323,6 +400,8 @@ ROUTINE PlacePiece
 	;	playSound(DROP_PIECE_SOUND)
 	;
 	; NewPiece()
+
+	STZ	canHoldPieceOnZero
 
 	JSR	Ui__DrawCurrentPieceOnField
 

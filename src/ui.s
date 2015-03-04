@@ -831,17 +831,45 @@ ROUTINE DrawCurrentPieceOnField
 	RTS
 
 
+
+.A8
+.I16
+ROUTINE DrawHoldPiece
+	; pos = DRAW_HOLD_COLUMN * SCREEN_TILE_WIDTH + DRAW_HOLD_ROW
+	; _DrawPieceTilesInBox(FPTetromones__holdPiece, pos)
+	
+	LDX	FPTetromones__holdPiece
+	LDY	#DRAW_HOLD_COLUMN * SCREEN_TILE_WIDTH + DRAW_HOLD_ROW
+	
+	BRA	_DrawPieceTilesInBox
+
+
+
 .A8
 .I16
 ROUTINE DrawNextPiece
-	; nextPiece = FPTetromones__nextPiece
-	; drawPieceTile = nextPiece->tileColor
-	; x = 0
-	; y = DRAW_NEXT_COLUMN * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+	; pos = DRAW_NEXT_COLUMN * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+	; _DrawPieceTilesInBox(FPTetromones__nextPiece, pos)
+	
+	LDX	FPTetromones__nextPiece
+	LDY	#DRAW_NEXT_COLUMN * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+
+	.assert * = _DrawPieceTilesInBox, lderror, "Bad Flow"
+
+
+
+;; Draws the piece as a box in the screen (overriding the tiles)
+;; INPUT:
+;; 	X = piece
+;; 	Y = tile position
+.A8
+.I16
+ROUTINE _DrawPieceTilesInBox
+	; drawPieceTile = x->tileColor
 	;
-	; repeat
+	; for drawPieceRow = PIECE_HEIGHT to 0
 	;	for drawPieceColumn = PIECE_WIDTH to 0
-	;		if nextPiece->cells[x] == ' '
+	;		if x->cells[x] == ' '
 	;			screenBuffer[y] = 0
 	;		else
 	;			screenBuffer[y] = drawPieceTile
@@ -849,16 +877,14 @@ ROUTINE DrawNextPiece
 	;		y++
 	;
 	;	y += SCREEN_TILE_WIDTH - PIECE_WIDTH
-	; until y >= (DRAW_NEXT_COLUMN + PIECE_HEIGHT) * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
 	;
 	; updateOamBufferOnZero = 0
-
-	LDX	FPTetromones__nextPiece
 
 	LDA	a:Piece::tileColor, X
 	STA	drawPieceTile
 
-	LDY	#DRAW_NEXT_COLUMN * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
+	LDA	#PIECE_HEIGHT
+	STA	drawPieceRow
 
 	REPEAT
 		LDA	#PIECE_WIDTH
@@ -889,8 +915,8 @@ ROUTINE DrawNextPiece
 
 		SEP	#$20
 .A8
-		CPY	#(DRAW_NEXT_COLUMN + PIECE_HEIGHT) * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
-	UNTIL_GE
+		DEC	drawPieceRow
+	UNTIL_ZERO
 
 	STZ	updateBufferOnZero
 

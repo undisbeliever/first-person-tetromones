@@ -74,11 +74,16 @@ DRAW_STATS_COLUMN   =  4
 DRAW_STATS_SPACING  =  3
 DRAW_N_STATS        =  7
 
+DRAW_NLINES_ROW     = 20
+DRAW_NLINES_COLUMN  =  1
+
+
+; Location of the pieces
 DRAW_NEXT_ROW       = 25
 DRAW_NEXT_COLUMN    = 15
 
-DRAW_NLINES_ROW     = 20
-DRAW_NLINES_COLUMN  =  1
+DRAW_HOLD_ROW       = 25
+DRAW_HOLD_COLUMN    = 0
 
 
 ;; Number of colors per piece tile
@@ -180,6 +185,12 @@ IMPORT_MODULE Ui
 	;; Draws the current piece as a set of 4 sprites.
 	;; REQUIRE: 8 bit A, 16 bit Index
 	ROUTINE DrawCurrentPiece
+
+	;; Draws the hold piece in the hold section.
+	;; If FPTetromones__holdPiece is 0 then will display nothing.
+	;;
+	;; REQUIRE: 8 bit A, 16 bit Index
+	ROUTINE DrawHoldPiece
 
 	;; Draws the next piece in the next section
 	;; REQUIRE: 8 bit A, 16 bit Index
