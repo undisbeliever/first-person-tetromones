@@ -13,7 +13,7 @@ REPEAT_DELAY = 20
 
 JOY_ROTATE_CC = JOY_L | JOY_B
 JOY_ROTATE_CW = JOY_R | JOY_Y
-
+JOY_INSTANT_DROP = JOY_A
 
 .struct RotationMoveControls
 	rotateCwPtr	.addr

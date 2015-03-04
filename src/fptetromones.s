@@ -149,7 +149,10 @@ ROUTINE GameLoop
 	;			PlaySound(SOUND_MOVE_RIGHT)
 	;
 	;
-	;	if Controls__pressed & JOY_ROTATE_CC
+	;	if Controls__pressed & JOY_INSTANT_DROP
+	;			InstantDrop()
+	;
+	;	else if Controls__pressed & JOY_ROTATE_CC
 	;		if Ui__CheckPieceRotateCcCollision() != true
 	;			PlaySound(SOUND_ROTATE_CC)
 	;			Ui__RotateCc()
@@ -220,7 +223,12 @@ ROUTINE GameLoop
 		REP	#$20
 .A16
 		LDA	Controls__pressed
-		IF_BIT	#JOY_ROTATE_CC
+		IF_BIT #JOY_INSTANT_DROP
+.A16
+			SEP	#$20
+			JSR	InstantDrop
+
+		ELSE_BIT #JOY_ROTATE_CC
 			SEP	#$20
 .A8
 			JSR	Ui__CheckPieceRotateCcCollision
@@ -263,6 +271,35 @@ ROUTINE GameLoop
 
 	RTS
 
+
+
+;; Instantly drops the piece and waits INSTANT_DROP_DELAY frames.
+.A8
+.I16
+ROUTINE InstantDrop
+	; repeat
+	;	c = Ui__CheckPieceDropCollision()
+	; while c clear
+	;	yPos++
+	;	fastDropDistance++
+	; 
+	; Ui__MoveGameField()
+	; WaitManyFrames(INSTANT_DROP_DELAY)
+	; PlacePiece()
+
+	REPEAT
+		JSR	Ui__CheckPieceDropCollision
+	WHILE_C_CLEAR
+		INC	yPos
+		INC	fastDropDistance
+	WEND
+
+	JSR	Ui__MoveGameField
+
+	LDA	#INSTANT_DROP_DELAY
+	JSR	WaitManyFrames
+
+	.assert * = PlacePiece, lderror, "Bad Flow"
 
 
 

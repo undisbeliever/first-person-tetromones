@@ -12,6 +12,7 @@ Controls
  * *D-Pad* - Move
  * *B* *R* - Rotate clockwise
  * *Y* *L* - Rotate counter-clockwise
+ * *A* - Insant drop
 
 
 Debug Testing Mode
