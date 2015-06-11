@@ -8,3 +8,6 @@ ALL: $(TABLES)
 %.inc: %.py
 	python3 $< >| $@
 
+.PHONY: clean
+	$(RM) $(TABLES)
+
