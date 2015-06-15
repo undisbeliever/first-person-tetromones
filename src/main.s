@@ -1,9 +1,6 @@
 ; Initialisation code
 
 .include "fptetromones.h"
-.include "includes/sfc_header.inc"
-
-
 
 
 ;; Initialisation Routine

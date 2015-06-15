@@ -1,10 +1,6 @@
 .ifndef ::_FPTETROMONES_H_
 ::_FPTETROMONES_H_ = 1
 
-.define VERSION 1
-.define REGION NTSC
-.define ROM_NAME "1ST PERSON TETROMONES"
-
 .setcpu "65816"
 
 ; Common includes
