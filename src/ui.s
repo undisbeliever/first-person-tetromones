@@ -1227,7 +1227,7 @@ LABEL VOffsetTable
 
 LABEL UiInitialBuffer
 	.repeat	SCREEN_TILE_HEIGHT, h
-		.incbin "resources/game-field.mp7", (SCREEN_UI_ROW + h) * MODE7_TILE_WIDTH + SCREEN_UI_COLUMN, SCREEN_TILE_WIDTH
+		.incbin "resources/mode7/game-field.mp7", (SCREEN_UI_ROW + h) * MODE7_TILE_WIDTH + SCREEN_UI_COLUMN, SCREEN_TILE_WIDTH
 	.endrepeat
 UiInitialBuffer_End:
 
