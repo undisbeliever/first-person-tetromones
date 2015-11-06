@@ -38,8 +38,6 @@ TODO
 
 Build Requirements
 ===================
- * snesdev-common
- * snesdev-utils
  * ca65
  * pcx2snes
  * gnu Make
