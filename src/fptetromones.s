@@ -112,7 +112,7 @@ ROUTINE	PlayGame
 		LDA	Controls__currentFrame + 1
 		BIT	#JOYH_START
 	WHILE_ZERO
-		JSR	Screen__WaitFrame
+		JSR	WaitFrame
 	WEND
 
 	JMP	Screen__FadeOut
@@ -124,7 +124,7 @@ ROUTINE	PlayGame
 .I16
 ROUTINE GameLoop
 	; repeat:
-	;	Screen__WaitFrame()
+	;	WaitFrame()
 	;
 	;	if Controls__currentFrame & rotationsControls->joyh_Drop
 	;		dropDelay -= FAST_DROP_SPEED
@@ -183,7 +183,7 @@ ROUTINE GameLoop
 	;
 
 	REPEAT
-		JSR	Screen__WaitFrame
+		JSR	WaitFrame
 
 		LDX	rotationsControls
 		LDA	Controls__currentFrame + 1
@@ -734,13 +734,15 @@ ROUTINE DetermineNextPiece
 	; nextPiece = Pieces__Table[x]
 	; Ui__DrawNextPiece()
 
-	LDY	#Pieces__COUNT
-	JSR	Random__Rnd_U16Y
+	.assert Pieces__COUNT < 256, lderror, "Too many pieces"
+
+	LDA	#.lobyte(Pieces__COUNT)
+	JSR	Random__Rnd_U8A
 
 	; Select Next Piece
 	REP	#$20
 .A16
-	TYA
+	AND	#$00ff
 	ASL
 	TAX
 
@@ -848,7 +850,7 @@ ROUTINE DebugTests
 	;		Ui__DrawLevelNumber()
 	;		Ui__UpdatePaletteForLevel()
 	;	
-	;	Screen__WaitFrame()
+	;	WaitFrame()
 
 	LDA	#SHOW_BOARD_XPOS
 	STA	xPos
@@ -900,7 +902,7 @@ ROUTINE DebugTests
 			JSR	Ui__UpdatePaletteForLevel
 		ENDIF
 
-		JSR	Screen__WaitFrame
+		JSR	WaitFrame
 	FOREVER
 
 
@@ -910,11 +912,11 @@ ROUTINE DebugTests
 .I16
 ROUTINE WaitForButtonPress
 	; repeat
-	;	Screen__WaitFrame()
+	;	WaitFrame()
 	;	if Controls__pressed & (JOY_BUTTONS | JOY_START)
 	;		return
 
-		JSR	Screen__WaitFrame
+		JSR	WaitFrame
 
 		REP	#$20
 .A16
@@ -939,7 +941,7 @@ ROUTINE WaitManyFramesForSpawnDelay
 	; for dropDelay = A to 0
 	;	if Controls__pressed & JOY_HOLD_PIECE
 	;		nextPieceIsHoldPieceOnZero = 0
-	;	Screen__WaitFrame()
+	;	WaitFrame()
 
 	STA	dropDelay
 	REPEAT
@@ -953,13 +955,20 @@ ROUTINE WaitManyFramesForSpawnDelay
 			STZ	nextPieceIsHoldPieceOnZero
 		ENDIF
 
-		JSR	Screen__WaitFrame
+		JSR	WaitFrame
 
 		DEC	dropDelay
 	UNTIL_ZERO
 
 	RTS
 
+
+;; Wait To the end of the frame
+.A8
+.I16
+ROUTINE WaitFrame
+	JSR	Screen__WaitFrame
+	JMP	Random__AddJoypadEntropy
 
 .rodata
 

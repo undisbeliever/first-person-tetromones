@@ -37,12 +37,11 @@ ROUTINE VBlank
 
 	; Must be done AFTER VRAM/OAM transfers, can go over limit.
 	;
-	; Had to move `Console__Update` and `Random__AddJoypadEntropy`
+	; Had to move `Console__Update`
 	; into VBlank because for some reasson setting Mode 7 matrix in
 	; `Ui__VBlank` caused JOY1 to stop working in snes9x 1.51 debugger.
 
 	JSR	Controls__Update
-	JSR	Random__AddJoypadEntropy
 
 	; Load State
 	REP	#$30

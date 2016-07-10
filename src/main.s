@@ -1,7 +1,7 @@
 ; Initialisation code
 
 .include "fptetromones.h"
-
+.include "routines/random.h"
 
 ;; Initialisation Routine
 ROUTINE Main
@@ -14,6 +14,9 @@ ROUTINE Main
 
 	LDA	#NMITIMEN_VBLANK_FLAG | NMITIMEN_AUTOJOY_FLAG
 	STA	NMITIMEN
+
+	LDXY	#$c0aa5674		; source: random.org
+	STXY	Random__seed
 
 	JSR	FPTetromones__Init
 
