@@ -115,7 +115,6 @@ ROUTINE Update
 	; _Update_DelayTestButton(JOY1_H, JOYH_LEFT, leftCounter)
 	; _Update_DelayTestButton(JOY1_H, JOYH_RIGHT, rightCounter)
 
-	; ::SHOULDDO UNTIL_BIT in structure::
 	LDA	#HVJOY_AUTOJOY
 _Update_loop:
 		BIT	HVJOY

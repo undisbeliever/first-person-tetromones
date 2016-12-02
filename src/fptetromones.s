@@ -592,7 +592,6 @@ ROUTINE RemoveCompletedLinesAnimation
 
 	JSR	HighlightCompletedLines
 
-	;; ::SHOULDDO an actual remove lines animation instead of hide::
 	LDA	#LINE_REMOVE_DELAY
 	JSR	WaitManyFramesForSpawnDelay
 

@@ -28,14 +28,6 @@ Other tests include:
  * Rotation: Pressing the rotation buttons will increase the .
 
 
-TODO
-====
- * Test on real SNES Hardware
- * Try to see if shrinking the game field to 6x6 pixel tiles looks better.
- * High Score Table
- * Add sound
-
-
 Build Requirements
 ===================
  * ca65

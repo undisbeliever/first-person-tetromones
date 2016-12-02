@@ -1183,8 +1183,6 @@ ROUTINE SetupScreen
 	LDA	#INIDISP_FORCE
 	STA	INIDISP
 
-	;; ::SHOULDDO add BG_MODE to Screen_SetVramBaseAndSize::
-	;; ::: Will probably have to rename it::
 	LDA	#GAME_MODE
 	STA	BGMODE
 
