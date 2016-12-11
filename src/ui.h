@@ -112,7 +112,7 @@ IMPORT_MODULE Ui
 	ROUTINE VBlank
 
 	;; Changes the location of the BG to match the
-	;; game curret piece location
+	;; game current piece location
 	;; REQUIRES: 8 bit A, 16 bit Index
 	ROUTINE MoveGameField
 
@@ -166,7 +166,7 @@ IMPORT_MODULE Ui
 	;; RETURN: c set if current piece is on top of another.
 	ROUTINE CheckPieceDropCollision
 
-	;; Hghlights all of the tiles of a single line.
+	;; Highlights all of the tiles of a single line.
 	;; Used for completed line animation.
 	;; REQUIRES: 8 bit A, 16 bit Index
 	;; INPUT: A = line
@@ -212,7 +212,7 @@ IMPORT_MODULE Ui
 	;;	A - the level number
 	ROUTINE DrawLevelNumber
 
-	;; Draws the statsistics to the screen
+	;; Draws the statistics to the screen
 	;; REQUIRE: 8 bit A, 16 bit Index
 	ROUTINE DrawStatistics
 
@@ -227,7 +227,7 @@ IMPORT_MODULE Ui
 	;; REQUIRE: 8 bit A, 16 bit Index
 	ROUTINE RemoveHoldPiece
 
-	;; Sets the piece palette to corrospond with the level number
+	;; Sets the piece palette to correspond with the level number
 	;; REQUIRE: 8 bit A, 16 bit Index
 	;; @see `table/level-colors.inc` for color data.
 	ROUTINE UpdatePaletteForLevel

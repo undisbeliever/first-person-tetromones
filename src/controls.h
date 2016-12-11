@@ -29,14 +29,14 @@ JOY_HOLD_PIECE   = JOY_X
 
 IMPORT_MODULE Controls
 	;; New buttons pressed on current frame.
-	;; The directional buttons impletement a repeat delay
+	;; The directional buttons implement a repeat delay
 	;; which causes them to be *pressed* every `REPEAT_DELAY` frames.
 	WORD	pressed
 
 	;; Buttons that have been held for more than one frame
 	WORD	held
 
-	;; The state of the prevous frame
+	;; The state of the previous frame
 	WORD	previousFrame
 
 	;; The state of the current frame

@@ -24,7 +24,7 @@ GameVariables:
 	UINT16  nLines
 	UINT16	statistics, N_PIECES
 
-	;; Address of the the RotationMoveControls struct
+	;; Address of the RotationMoveControls struct
 	ADDR	rotationsControls
 
 	;; Number of lines that are dropped by holding down.

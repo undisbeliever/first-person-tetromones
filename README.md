@@ -1,7 +1,7 @@
 First Person Tetromones
 =======================
 
-Feburary's entry into the 1 Game Per Month Challange.
+February's entry into the 1 Game Per Month Challenge.
 
 This represents a Super Nintendo port of [First Person Tetris](http://firstpersontetris.com), using Mode 7 rotations to represent the game field.
 
@@ -12,7 +12,7 @@ Controls
  * *D-Pad* - Move
  * *B* *R* - Rotate clockwise
  * *Y* *L* - Rotate counter-clockwise
- * *A* - Insant drop
+ * *A* - Instant drop
  * *X* - Hold Piece
 
 

@@ -31,9 +31,9 @@ PIECE_HEIGHT = 4
 	;; A table of the number of cells per line.
 	cellsPerLine	.res 4
 
-	;; center xPos - word because its used in a word calculation
+	;; centre xPos - word because its used in a word calculation
 	xOffset		.word
-	;; center yPos - word because its used in a word calculation
+	;; centre yPos - word because its used in a word calculation
 	yOffset		.word
 
 	;; The location of the cells. space is clear, anything else has a tile.

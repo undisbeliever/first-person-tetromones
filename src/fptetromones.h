@@ -51,7 +51,7 @@ IMPORT_MODULE FPTetromones
 
 	;; X Position of current piece relative to screenBuffer left in tiles
 	BYTE	xPos
-	;; Y Position of current piece relative to top of theplayable area in tiles.
+	;; Y Position of current piece relative to top of the playable area in tiles.
 	BYTE	yPos
 
 
