@@ -200,7 +200,7 @@ ROUTINE MoveGameField
 	ASL
 	ASL
 	ASL
-	ADD	#PIECE_XPOS 
+	ADD	#PIECE_XPOS
 	ADD	a:Piece::xOffset, X
 	STA	mode7xPos
 
@@ -213,7 +213,7 @@ ROUTINE MoveGameField
 	ADD	a:Piece::yOffset, X
 	STA	mode7yPos
 
-	; ::HACK fix the square position:: 
+	; ::HACK fix the square position::
 	; Could not find a proper way to solve the positioning
 	; problem of the square piece.
 
@@ -837,10 +837,10 @@ ROUTINE DrawCurrentPieceOnField
 ROUTINE DrawHoldPiece
 	; pos = DRAW_HOLD_COLUMN * SCREEN_TILE_WIDTH + DRAW_HOLD_ROW
 	; _DrawPieceTilesInBox(FPTetromones__holdPiece, pos)
-	
+
 	LDX	FPTetromones__holdPiece
 	LDY	#DRAW_HOLD_COLUMN * SCREEN_TILE_WIDTH + DRAW_HOLD_ROW
-	
+
 	BRA	_DrawPieceTilesInBox
 
 
@@ -850,7 +850,7 @@ ROUTINE DrawHoldPiece
 ROUTINE DrawNextPiece
 	; pos = DRAW_NEXT_COLUMN * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
 	; _DrawPieceTilesInBox(FPTetromones__nextPiece, pos)
-	
+
 	LDX	FPTetromones__nextPiece
 	LDY	#DRAW_NEXT_COLUMN * SCREEN_TILE_WIDTH + DRAW_NEXT_ROW
 
@@ -945,7 +945,7 @@ ROUTINE DrawNLines
 		ADD	#NUMBER_DIGIT_DELTA
 		STA	screenBuffer + DRAW_NLINES_COLUMN * SCREEN_TILE_WIDTH + DRAW_NLINES_ROW - i
 
-		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA	
+		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA
 		STA	screenBuffer + DRAW_NLINES_COLUMN * SCREEN_TILE_WIDTH + 32 + DRAW_NLINES_ROW - i
 	.endrepeat
 
@@ -978,7 +978,7 @@ ROUTINE DrawLevelNumber
 		ADD	#NUMBER_DIGIT_DELTA
 		STA	screenBuffer + DRAW_LEVEL_COLUMN * SCREEN_TILE_WIDTH + DRAW_LEVEL_ROW - i
 
-		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA	
+		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA
 		STA	screenBuffer + DRAW_LEVEL_COLUMN * SCREEN_TILE_WIDTH + 32 + DRAW_LEVEL_ROW - i
 	.endrepeat
 
@@ -1029,7 +1029,7 @@ ROUTINE _DrawNumber_3_U16Y
 		ADD	#NUMBER_DIGIT_DELTA
 		STA	screenBuffer - i, X
 
-		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA	
+		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA
 		STA	screenBuffer + 32 - i, X
 	.endrepeat
 
@@ -1043,7 +1043,7 @@ ROUTINE DrawHiScore
 	LDX	#DRAW_HISCORE_COLUMN * SCREEN_TILE_WIDTH + DRAW_SCORE_ROW
 	STX	drawNumberPos
 	LDXY	FPTetromones__hiScore
-	BRA	_DrawNumber_6_U32XY	
+	BRA	_DrawNumber_6_U32XY
 
 
 .A8
@@ -1081,7 +1081,7 @@ ROUTINE _DrawNumber_6_U32XY
 		ADD	#NUMBER_DIGIT_DELTA
 		STA	screenBuffer - i, X
 
-		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA	
+		ADD	#NUMBER_DIGIT_SECOND_HALF_DELTA
 		STA	screenBuffer + 32 - i, X
 	.endrepeat
 
@@ -1173,7 +1173,7 @@ ROUTINE	UpdatePaletteForLevel
 	STZ	updatePaletteOnZero
 
 	RTS
-	
+
 
 
 ;; Sets up the Screen Registers and loads tiles, maps and palette to PPU

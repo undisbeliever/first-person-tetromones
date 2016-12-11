@@ -66,7 +66,7 @@ def main():
     calc_rotations(1,  90)
     calc_rotations(2, 180)
     calc_rotations(3, 270)
-    
+
 
 if __name__ == '__main__':
     main()

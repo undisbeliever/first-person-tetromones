@@ -272,7 +272,7 @@ ROUTINE GameLoop
 			IF_C_CLEAR
 				; ::SOUND SOUND_ROTATE_CW::
 				JSR	Ui__RotateCw
-				
+
 				LDX	currentPiece
 				LDY	a:Piece::rotateCwPtr, X
 				STY	currentPiece
@@ -363,7 +363,7 @@ ROUTINE InstantDrop
 	; while c clear
 	;	yPos++
 	;	fastDropDistance++
-	; 
+	;
 	; Ui__MoveGameField()
 	; PlacePiece()
 
@@ -443,7 +443,7 @@ ROUTINE PlacePiece
 		JSR	ProcessCompletedLines
 	ELSE
 		;; ::SOUND DROP_PIECE_SOUND ::
-	ENDIF	
+	ENDIF
 
 	JMP	SpawnPiece
 
@@ -643,7 +643,7 @@ ROUTINE HighlightCompletedLines
 
 
 
-;; Spawn a Piece from nextPiece or holdPiece depending on `nextPieceIsHoldPieceOnZero` flag. 
+;; Spawn a Piece from nextPiece or holdPiece depending on `nextPieceIsHoldPieceOnZero` flag.
 .A8
 .I16
 ROUTINE SpawnPiece
@@ -652,7 +652,7 @@ ROUTINE SpawnPiece
 	;		currentPiece = holdPiece
 	;		holdPiece = 0
 	;
-	;		Ui__RemoveHoldPiece() 
+	;		Ui__RemoveHoldPiece()
 	;	else
 	;		currentPiece = nextPiece
 	;		DetermineNextPiece()
@@ -848,7 +848,7 @@ ROUTINE DebugTests
 	;		level++
 	;		Ui__DrawLevelNumber()
 	;		Ui__UpdatePaletteForLevel()
-	;	
+	;
 	;	WaitFrame()
 
 	LDA	#SHOW_BOARD_XPOS

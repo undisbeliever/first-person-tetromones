@@ -68,7 +68,7 @@ RotationControls_270:
 ;; INPUT: A = JOY1H
 ;; MODIFIES: A
 ;; MUST NOT MODIFY Y
-;; REQUIRE: 
+;; REQUIRE:
 ;;	8 bit A
 ;;	joyhTest must be a single button.
 .macro _Update_DelayTestButton  joyhTest, counter
