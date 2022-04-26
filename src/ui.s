@@ -1188,6 +1188,9 @@ ROUTINE SetupScreen
 
 	Screen_SetVramBaseAndSize GAME
 
+	; Reset mode 7 settings (ensure screen is not flipped)
+	STZ M7SEL
+
 	; Clear OAM, except for the the first 4 Objects of OAM High Table.
 	JSR	Reset__ClearOAM
 	LDX	#128 * 4 / 2
