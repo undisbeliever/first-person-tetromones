@@ -30,7 +30,7 @@ Other tests include:
 
 Build Requirements
 ===================
- * ca65
+ * ca65 v2.18 or later
  * pcx2snes
  * gnu Make
  * python3
